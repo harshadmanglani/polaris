@@ -2,7 +2,7 @@ package models
 
 type IBuilder interface {
 	GetBuilderMeta() BuilderMeta
-	Process() IData
+	Process(BuilderContext) IData
 }
 
 type BuilderMeta struct {
@@ -12,18 +12,4 @@ type BuilderMeta struct {
 	Produces  string
 	Name      string
 	Rank      int
-}
-
-func CreateNew(consumes []IData,
-	optionals []IData,
-	accesses []IData,
-	produces IData,
-	builder IBuilder) BuilderMeta {
-	return BuilderMeta{
-		Consumes:  DataArrayToMap(consumes),
-		Optionals: DataArrayToMap(optionals),
-		Accesses:  DataArrayToMap(accesses),
-		Produces:  DataToString(produces),
-		Name:      DataToString(builder),
-	}
 }

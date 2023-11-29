@@ -11,14 +11,14 @@ func createNew(dataSet models.DataSet) DataSetAccessor {
 }
 
 func (dsa DataSetAccessor) add(data models.IData) models.DataSet {
-	dsa.DataSet.AvailableData[models.DataToString(data)] = data
+	dsa.DataSet.AvailableData[models.Name(data)] = data
 	return dsa.DataSet
 }
 
 func (dsa DataSetAccessor) get(data models.IData) any {
-	return dsa.DataSet.AvailableData[models.DataToString(data)]
+	return dsa.DataSet.AvailableData[models.Name(data)]
 }
 
 func (dsa DataSetAccessor) getAccessibleData(data models.IData, builder models.IBuilder) any {
-	return dsa.DataSet.AvailableData[models.DataToString(data)]
+	return dsa.DataSet.AvailableData[models.Name(data)]
 }
