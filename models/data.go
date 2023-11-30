@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 )
@@ -40,6 +41,7 @@ func Name(strucc interface{}) string {
 
 	name := strings.ToUpper(camelToSnake(t.Name()))
 	structToNameMapping[t] = name
+	fmt.Printf("Input: %s, Output: %s\n", t, name)
 
 	return name
 }

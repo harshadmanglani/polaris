@@ -16,7 +16,7 @@ func generate(workflow models.IWorkflow) models.ExecutionGraph {
 		// 	if models.DataToString(b.GetBuilderMeta().Produces) == models.DataToString(workflow.GetWorkflowMeta().TargetData) {
 		// 		targetDataBuilderIndex = i
 		// 	}
-		fmt.Println("Registering builder: %s", b.GetBuilderMeta().Name)
+		fmt.Printf("Registering builder: %s\n", b.GetBuilderMeta().Name)
 	}
 	// fmt.Printf("Target data is produced by: %s", models.DataToString(builders[targetDataBuilderIndex]))
 	return models.ExecutionGraph{}

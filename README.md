@@ -17,6 +17,9 @@ The polaris framework is a high level logic execution engine in Golang that can 
 1. An OMS for any sort of checkout journey (Zerodha, Uber, Swiggy).
 2. Ticket processing flows.
 
+## Usage
+Head over to <a href="example/"></a>
+
 ## Limitations
 1. Workflow versioning is tricky to implement:
    1. Unless you can afford a 100% downtime ensuring all active workflows move into a terminal state, deploying new code requires ensuring backward compatibility.
