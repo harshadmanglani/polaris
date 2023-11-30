@@ -1,4 +1,4 @@
-package example
+package main
 
 import "time"
 
@@ -9,7 +9,7 @@ type OrderRequest struct {
 	AddressId string
 }
 
-type OrderRequestValidated struct {
+type RequestValidated struct {
 }
 
 type RiskCheckCompleted struct {
@@ -18,6 +18,11 @@ type RiskCheckCompleted struct {
 type OrderInfo struct {
 	OrderId     string
 	TotalAmount int
+}
+
+type PaymentInitialized struct {
+	PaymentUrl string
+	ExpiresAt  time.Time
 }
 
 type PaymentStatus struct {
@@ -38,8 +43,8 @@ type WarehouseStatusUpdateRequest struct {
 }
 
 type OrderDelivered struct {
-	OrderId string
-	Time    time.Time
+	OrderId     string
+	DeliveredAt time.Time
 }
 
 type WorkflowTerminated struct {

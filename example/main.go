@@ -1,6 +1,9 @@
-package example
+package main
 
-import "github.com/harshadmanglani/polaris/models"
+import (
+	"github.com/harshadmanglani/polaris/core"
+	"github.com/harshadmanglani/polaris/models"
+)
 
 type OmsWorkflow struct {
 }
@@ -13,4 +16,5 @@ func (omsW OmsWorkflow) GetWorkflowMeta() models.WorkflowMeta {
 }
 
 func main() {
+	core.RegisterWorkflow(OmsWorkflow{})
 }
