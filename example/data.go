@@ -12,7 +12,10 @@ type OrderRequest struct {
 type RequestValidated struct {
 }
 
-type RiskCheckCompleted struct {
+type RiskCheck1Completed struct {
+}
+
+type RiskCheck2Completed struct {
 }
 
 type OrderInfo struct {
@@ -36,7 +39,7 @@ type WarehouseOpsScheduled struct {
 	Status     string
 }
 
-type WarehouseStatusUpdateRequest struct {
+type WarehouseStatus struct {
 	OrderId    string
 	EtaInHours int
 	Status     string

@@ -1,49 +1,76 @@
 package main
 
-import "github.com/harshadmanglani/polaris/models"
+import (
+	"fmt"
+
+	"github.com/harshadmanglani/polaris/models"
+)
 
 type Validator struct {
 }
 
 func (v Validator) Process(context models.BuilderContext) models.IData {
+	fmt.Println("In validator")
 	// read from db
 	// do some inventory checks, acquire locks (or perform the Auth phase for Auth Capture)
 	// throw an error if checks fail
 	return RequestValidated{}
 }
 
-func (v Validator) GetBuilderMeta() models.BuilderMeta {
-	return models.BuilderMeta{
-		Consumes: models.StructsToMap([]models.IData{
+func (v Validator) GetBuilderInfo() models.BuilderInfo {
+	return models.BuilderInfo{
+		Consumes: []models.IData{
 			OrderRequest{},
-		}),
-		Produces:  models.Name(RequestValidated{}),
+		},
+		Produces:  RequestValidated{},
 		Optionals: nil,
 		Accesses:  nil,
-		Name:      models.Name(v),
 	}
 }
 
-type RiskChecker struct {
+type RiskChecker1 struct {
 }
 
-func (rC RiskChecker) Process(context models.BuilderContext) models.IData {
+func (rC RiskChecker1) Process(context models.BuilderContext) models.IData {
+	fmt.Println("In risk checker1")
 	// read from db
 	// do some risk checks with a downstream service
 	// throw an error if checks fail
-	return RiskCheckCompleted{}
+	return RiskCheck1Completed{}
 }
 
-func (rC RiskChecker) GetBuilderMeta() models.BuilderMeta {
-	return models.BuilderMeta{
-		Consumes: models.StructsToMap([]models.IData{
+func (rC RiskChecker1) GetBuilderInfo() models.BuilderInfo {
+	return models.BuilderInfo{
+		Consumes: []models.IData{
 			OrderRequest{},
 			RequestValidated{},
-		}),
-		Produces:  models.Name(RiskCheckCompleted{}),
+		},
+		Produces:  RiskCheck1Completed{},
 		Optionals: nil,
 		Accesses:  nil,
-		Name:      models.Name(rC),
+	}
+}
+
+type RiskChecker2 struct {
+}
+
+func (rC RiskChecker2) Process(context models.BuilderContext) models.IData {
+	fmt.Println("In risk checker2")
+	// read from db
+	// do some risk checks with a downstream service
+	// throw an error if checks fail
+	return RiskCheck1Completed{}
+}
+
+func (rC RiskChecker2) GetBuilderInfo() models.BuilderInfo {
+	return models.BuilderInfo{
+		Consumes: []models.IData{
+			OrderRequest{},
+			RequestValidated{},
+		},
+		Produces:  RiskCheck2Completed{},
+		Optionals: nil,
+		Accesses:  nil,
 	}
 }
 
@@ -51,21 +78,22 @@ type Persistor struct {
 }
 
 func (p Persistor) Process(context models.BuilderContext) models.IData {
+	fmt.Println("In persistor")
 	// store order in db
 	// release locks and reduce stock count (or perform the Capture phase)
 	return OrderInfo{}
 }
 
-func (p Persistor) GetBuilderMeta() models.BuilderMeta {
-	return models.BuilderMeta{
-		Consumes: models.StructsToMap([]models.IData{
+func (p Persistor) GetBuilderInfo() models.BuilderInfo {
+	return models.BuilderInfo{
+		Consumes: []models.IData{
 			OrderRequest{},
-			RiskCheckCompleted{},
-		}),
-		Produces:  models.Name(OrderInfo{}),
+			RiskCheck1Completed{},
+			RiskCheck2Completed{},
+		},
+		Produces:  OrderInfo{},
 		Optionals: nil,
 		Accesses:  nil,
-		Name:      models.Name(p),
 	}
 }
 
@@ -73,19 +101,19 @@ type PaymentInitializer struct {
 }
 
 func (pI PaymentInitializer) Process(context models.BuilderContext) models.IData {
+	fmt.Println("In payment initializer")
 	// call a PG
 	return PaymentInitialized{}
 }
 
-func (pI PaymentInitializer) GetBuilderMeta() models.BuilderMeta {
-	return models.BuilderMeta{
-		Consumes: models.StructsToMap([]models.IData{
+func (pI PaymentInitializer) GetBuilderInfo() models.BuilderInfo {
+	return models.BuilderInfo{
+		Consumes: []models.IData{
 			OrderInfo{},
-		}),
-		Produces:  models.Name(PaymentInitializer{}),
+		},
+		Produces:  PaymentInitialized{},
 		Optionals: nil,
 		Accesses:  nil,
-		Name:      models.Name(pI),
 	}
 }
 
@@ -93,20 +121,20 @@ type PaymentStatusUpdater struct {
 }
 
 func (pS PaymentStatusUpdater) Process(context models.BuilderContext) models.IData {
+	fmt.Println("In payment status updater")
 	// schedule warehouse ops if payment is successful
 	return WarehouseOpsScheduled{}
 }
 
-func (pS PaymentStatusUpdater) GetBuilderMeta() models.BuilderMeta {
-	return models.BuilderMeta{
-		Consumes: models.StructsToMap([]models.IData{
+func (pS PaymentStatusUpdater) GetBuilderInfo() models.BuilderInfo {
+	return models.BuilderInfo{
+		Consumes: []models.IData{
 			PaymentInitialized{},
 			PaymentStatus{},
-		}),
-		Produces:  models.Name(WarehouseOpsScheduled{}),
+		},
+		Produces:  WarehouseOpsScheduled{},
 		Optionals: nil,
 		Accesses:  nil,
-		Name:      models.Name(pS),
 	}
 }
 
@@ -114,19 +142,38 @@ type WarehouseStatusUpdater struct {
 }
 
 func (wS WarehouseStatusUpdater) Process(context models.BuilderContext) models.IData {
+	fmt.Println("In warehouse status updater")
+	// if order was delivered produce output, otherwise produce null and flow will stop
+	return OrderDelivered{}
+}
+
+func (wS WarehouseStatusUpdater) GetBuilderInfo() models.BuilderInfo {
+	return models.BuilderInfo{
+		Consumes: []models.IData{
+			WarehouseStatus{},
+		},
+		Produces:  OrderDelivered{},
+		Optionals: nil,
+		Accesses:  nil,
+	}
+}
+
+type WorkflowTerminator struct {
+}
+
+func (wT WorkflowTerminator) Process(context models.BuilderContext) models.IData {
+	fmt.Println("In workflow terminator")
 	// schedule warehouse ops if payment is successful
 	return WarehouseOpsScheduled{}
 }
 
-func (wS WarehouseStatusUpdater) GetBuilderMeta() models.BuilderMeta {
-	return models.BuilderMeta{
-		Consumes: models.StructsToMap([]models.IData{
-			PaymentInitialized{},
-			PaymentStatus{},
-		}),
-		Produces:  models.Name(WarehouseOpsScheduled{}),
+func (wT WorkflowTerminator) GetBuilderInfo() models.BuilderInfo {
+	return models.BuilderInfo{
+		Consumes: []models.IData{
+			OrderDelivered{},
+		},
+		Produces:  WorkflowTerminated{},
 		Optionals: nil,
 		Accesses:  nil,
-		Name:      models.Name(wS),
 	}
 }

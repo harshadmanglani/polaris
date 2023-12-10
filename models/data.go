@@ -1,18 +1,12 @@
 package models
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 )
 
 type IData interface {
 }
-
-// type DataMeta struct {
-// 	Data        string
-// 	GeneratedBy string
-// }
 
 type DataDelta struct {
 	Delta []IData
@@ -22,12 +16,8 @@ type DataSet struct {
 	AvailableData map[string]IData
 }
 
-func StructsToMap(data ...interface{}) map[string]bool {
-	names := make(map[string]bool, len(data))
-	for _, d := range data {
-		names[Name(d)] = true
-	}
-	return names
+type DataExecutionResponse struct {
+	Responses map[string]IData
 }
 
 var structToNameMapping = make(map[reflect.Type]string)
@@ -41,7 +31,6 @@ func Name(strucc interface{}) string {
 
 	name := strings.ToUpper(camelToSnake(t.Name()))
 	structToNameMapping[t] = name
-	fmt.Printf("Input: %s, Output: %s\n", t, name)
 
 	return name
 }
