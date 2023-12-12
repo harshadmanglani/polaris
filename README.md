@@ -57,9 +57,8 @@ There are two ways to integrate Polaris to run your workflows.
 
 ### Distributed workflows with a generic orchestrator service
 <img src="example/Usage-1.png">
-Assume you have two workflows in your org, and your microservice architecture has clear separation of concerns.
 
-You have the following microservices:
+Assume you have the following microservices:
 1. Users service - manages info for users
 2. KYC - talks with multiple external entities to complete KYC for users
 3. Payments - talks with Payment Gateways to initiate and process transactions
@@ -77,6 +76,7 @@ Benefits:
 ### Workflows in multiple "driver" services if you have tens of microservices
 <img src="example/Usage-2.png">
 Assume you have multiple workflows by category and your architecture has separation of concerns for workflows by category
+
 SignUp/SignIn service to manage
 1. SignUpWorkflow
 2. SignInWorkflow
