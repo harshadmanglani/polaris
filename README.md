@@ -90,3 +90,41 @@ Benefits:
 1. Separation of concerns per category
 2. Avoids single point of failure for workflows across the org
 3. Easy to manage if you are a big org with multiple devs
+
+### Sample Code
+```
+type OmsWorkflow struct {
+}
+
+func (omsW OmsWorkflow) GetWorkflowMeta() models.WorkflowMeta {
+	return models.WorkflowMeta{
+		// the ordering of builders below is for readability, the framework will evaluate the exec graph irrespective of it
+		Builders: []models.IBuilder{
+			Validator{},
+			RiskChecker1{}, RiskChecker2{}, // perform these in parallel
+			Persistor{},
+			PaymentInitializer{},
+			PaymentStatusUpdater{},
+			WarehouseStatusUpdater{},
+			WorkflowTerminator{},
+		},
+		TargetData: WorkflowTerminated{},
+	}
+}
+
+var (
+	omsDataFlow models.DataFlow
+	executor    core.Executor
+)
+
+func init() {
+	omsDataFlow = core.RegisterWorkflow(OmsWorkflow{})
+	executor = core.Executor{
+		Before:  func() { fmt.Printf("Builder X is about to be executed") },
+		After:   func() { fmt.Printf("Builder X executed successfully and generated data Y") },
+		OnError: func() { fmt.Printf("Builder X errored with stack trace Z") },
+	}
+}
+```
+
+For more detailed usage, head over to <a href="example/">
