@@ -1,4 +1,4 @@
-package models
+package polaris
 
 type IWorkflow interface {
 	GetWorkflowMeta() WorkflowMeta

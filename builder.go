@@ -1,4 +1,4 @@
-package models
+package polaris
 
 import mapset "github.com/deckarep/golang-set/v2"
 

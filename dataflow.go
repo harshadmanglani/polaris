@@ -1,28 +1,32 @@
-package core
+package polaris
 
-import (
-	"github.com/harshadmanglani/polaris/models"
-)
+type DataFlow struct {
+	Name       string
+	TargetData string
+	ExecGraph  ExecutionGraph
+	// TODO: implement Transients
+	// TODO: implement ResolutionSpec
+}
 
 type DataFlowBuilder struct {
 	metaDataManager MetaDataManager
-	dataFlow        models.DataFlow
+	dataFlow        DataFlow
 }
 
-func (dfb *DataFlowBuilder) buildDataFlow(workflow models.IWorkflow) {
+func (dfb *DataFlowBuilder) buildDataFlow(workflow IWorkflow) {
 	dfb.metaDataManager = MetaDataManager{}
 	for _, b := range workflow.GetWorkflowMeta().Builders {
 		dfb.metaDataManager.register(b)
 	}
-	dfb.dataFlow = models.DataFlow{
-		Name:       models.Name(workflow),
-		TargetData: models.Name(workflow.GetWorkflowMeta().TargetData),
+	dfb.dataFlow = DataFlow{
+		Name:       Name(workflow),
+		TargetData: Name(workflow.GetWorkflowMeta().TargetData),
 	}
 	execGraphGenerator := ExecutionGraphGenerator{metaDataManager: dfb.metaDataManager}
 	dfb.dataFlow.ExecGraph = execGraphGenerator.generateExecGraph(&dfb.dataFlow)
 }
 
-func RegisterWorkflow(workflow models.IWorkflow) models.DataFlow {
+func RegisterWorkflow(workflow IWorkflow) DataFlow {
 	dfb := &DataFlowBuilder{}
 	dfb.buildDataFlow(workflow)
 	return dfb.dataFlow
