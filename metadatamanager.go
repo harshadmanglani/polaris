@@ -14,6 +14,17 @@ type MetaDataManager struct {
 	accessesMeta  map[string]mapset.Set[BuilderMeta]
 }
 
+func newMetaDataManager() MetaDataManager {
+	return MetaDataManager{
+		builders:              make(map[string]IBuilder),
+		builderMetaMap:        make(map[string]BuilderMeta),
+		producedToProducerMap: make(map[string]BuilderMeta),
+		consumesMeta:          make(map[string]mapset.Set[BuilderMeta]),
+		optionalsMeta:         make(map[string]mapset.Set[BuilderMeta]),
+		accessesMeta:          make(map[string]mapset.Set[BuilderMeta]),
+	}
+}
+
 func buildSet(data []IData) mapset.Set[string] {
 	set := mapset.NewSet[string]()
 	for _, d := range data {
@@ -38,20 +49,29 @@ func (m *MetaDataManager) register(builder IBuilder) {
 	if _, ok := m.builderMetaMap[builderMeta.Name]; ok {
 		panic("Builder already exists")
 	}
+
 	m.builders[builderMeta.Name] = builder
 	m.builderMetaMap[builderMeta.Name] = builderMeta
-	m.producedToProducerMap[builderMeta.Produces] = m.producedToProducerMap[builderMeta.Produces]
+	m.producedToProducerMap[builderMeta.Produces] = builderMeta
 	for _, c := range builder.GetBuilderInfo().Consumes {
+		_, ok := m.consumesMeta[Name(c)]
+		if !ok {
+			m.consumesMeta[Name(c)] = mapset.NewSet[BuilderMeta]()
+		}
 		m.consumesMeta[Name(c)].Add(builderMeta)
 	}
 	for _, o := range builder.GetBuilderInfo().Optionals {
+		_, ok := m.optionalsMeta[Name(o)]
+		if !ok {
+			m.optionalsMeta[Name(o)] = mapset.NewSet[BuilderMeta]()
+		}
 		m.optionalsMeta[Name(o)].Add(builderMeta)
 	}
 	for _, a := range builder.GetBuilderInfo().Accesses {
+		_, ok := m.accessesMeta[Name(a)]
+		if !ok {
+			m.accessesMeta[Name(a)] = mapset.NewSet[BuilderMeta]()
+		}
 		m.accessesMeta[Name(a)].Add(builderMeta)
 	}
-}
-
-func (m *MetaDataManager) getMetaForProducerOf(data string) BuilderMeta {
-	return m.producedToProducerMap[data]
 }

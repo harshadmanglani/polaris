@@ -14,7 +14,7 @@ type DataFlowBuilder struct {
 }
 
 func (dfb *DataFlowBuilder) buildDataFlow(workflow IWorkflow) {
-	dfb.metaDataManager = MetaDataManager{}
+	dfb.metaDataManager = newMetaDataManager()
 	for _, b := range workflow.GetWorkflowMeta().Builders {
 		dfb.metaDataManager.register(b)
 	}
