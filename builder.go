@@ -1,6 +1,10 @@
 package polaris
 
-import mapset "github.com/deckarep/golang-set/v2"
+import (
+	"reflect"
+
+	mapset "github.com/deckarep/golang-set/v2"
+)
 
 type IBuilder interface {
 	GetBuilderInfo() BuilderInfo
@@ -26,6 +30,8 @@ type BuilderMeta struct {
 	Produces  string
 	Name      string
 	Rank      int
+	Type      reflect.Type
+	PtrType   reflect.Type
 }
 
 func (meta *BuilderMeta) DeepCopy() BuilderMeta {

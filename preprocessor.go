@@ -2,36 +2,58 @@ package polaris
 
 import (
 	"container/list"
-	"fmt"
 )
 
-type ExecutionGraph struct {
+var workflowStore map[string]DataFlow
+var dataStore map[string]DataSet
+
+func init() {
+	workflowStore = make(map[string]DataFlow)
+	dataStore = make(map[string]DataSet)
+	// This is where redis client would be initialized
+}
+
+type DataFlow struct {
+	Name                string
+	TargetData          string
 	DependencyHierarchy [][]BuilderMeta
+	metaDataManager     MetaDataManager
+	// TODO: implement Transients
+	// TODO: implement ResolutionSpec
 }
 
-type ExecutionGraphGenerator struct {
-	metaDataManager MetaDataManager
-}
-
-func (e *ExecutionGraphGenerator) generateExecGraph(dataFlow *DataFlow) ExecutionGraph {
-	if dataFlow.TargetData == "" {
-		panic("NO_TARGET_DATA")
+func RegisterWorkflow(workflowKey string, workflow IWorkflow) {
+	metaDataManager := newMetaDataManager()
+	for _, b := range workflow.GetWorkflowMeta().Builders {
+		metaDataManager.register(b)
 	}
+	dataFlow := DataFlow{
+		Name:                Name(workflow),
+		TargetData:          Name(workflow.GetWorkflowMeta().TargetData),
+		metaDataManager:     metaDataManager,
+		DependencyHierarchy: preprocess(&metaDataManager),
+	}
+	workflowStore[workflowKey] = dataFlow
+}
+
+// TODO:
+// 1. refactor to optimize
+// 2. measure time
+// 3. rename
+// 4. add error handling for null target data
+func preprocess(metaDataManager *MetaDataManager) [][]BuilderMeta {
 	dependencyGraph := make(map[string][]BuilderMeta)
 	inDegree := make(map[string]int, 0)
-	executionGraph := ExecutionGraph{
-		DependencyHierarchy: make([][]BuilderMeta, 0),
-	}
+	depedencyHierarchy := make([][]BuilderMeta, 0)
 
-	for name, builderMeta := range e.metaDataManager.builderMetaMap {
+	for name, builderMeta := range metaDataManager.builderMetaMap {
 		consumes := builderMeta.EffectiveConsumes()
 		for _, c := range consumes.ToSlice() {
-			fmt.Println(c)
 			if _, ok := dependencyGraph[name]; !ok {
 				dependencyGraph[name] = make([]BuilderMeta, 0)
 			}
-			if producedBy, ok := e.metaDataManager.producedToProducerMap[c]; ok {
-				if val, ok := e.metaDataManager.builderMetaMap[producedBy.Name]; ok {
+			if producedBy, ok := metaDataManager.producedToProducerMap[c]; ok {
+				if val, ok := metaDataManager.builderMetaMap[producedBy.Name]; ok {
 					dependencyGraph[name] = append(dependencyGraph[name], val)
 				}
 			}
@@ -63,7 +85,7 @@ func (e *ExecutionGraphGenerator) generateExecGraph(dataFlow *DataFlow) Executio
 			node := element.Value.(string)
 			queue.Remove(element)
 
-			currentLevel = append(currentLevel, e.metaDataManager.builderMetaMap[node])
+			currentLevel = append(currentLevel, metaDataManager.builderMetaMap[node])
 
 			for _, builder := range graph[node] {
 				inDegree[builder]--
@@ -73,7 +95,7 @@ func (e *ExecutionGraphGenerator) generateExecGraph(dataFlow *DataFlow) Executio
 			}
 		}
 
-		executionGraph.DependencyHierarchy = append(executionGraph.DependencyHierarchy, currentLevel)
+		depedencyHierarchy = append(depedencyHierarchy, currentLevel)
 	}
-	return executionGraph
+	return depedencyHierarchy
 }

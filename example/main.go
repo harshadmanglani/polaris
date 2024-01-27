@@ -252,6 +252,23 @@ func (wT WorkflowTerminator) GetBuilderInfo() polaris.BuilderInfo {
 }
 
 func main() {
-	omsDataFlow := polaris.RegisterWorkflow(OmsWorkflow{})
-	fmt.Println(omsDataFlow.ExecGraph.DependencyHierarchy)
+	polaris.RegisterWorkflow("OMSWORKFLOW", OmsWorkflow{})
+
+	e := polaris.Executor{
+		OnError: func() {
+			fmt.Println("An error occurred")
+		},
+		Before: func() {
+			fmt.Println("Before execution")
+		},
+		After: func() {
+			fmt.Println("After execution")
+		},
+	}
+	e.Run("OMSWORKFLOW", "someUniqueId", OrderRequest{
+		ProductId: 12,
+		Qty:       1,
+		UserId:    "abcd",
+		AddressId: "1234",
+	})
 }

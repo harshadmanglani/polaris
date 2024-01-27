@@ -1,6 +1,8 @@
 package polaris
 
 import (
+	"reflect"
+
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
@@ -41,6 +43,8 @@ func newBuilderMeta(builder IBuilder) BuilderMeta {
 		Accesses:  buildSet(builderInfo.Accesses),
 		Produces:  Name(builderInfo.Produces),
 		Name:      Name(builder),
+		PtrType:   reflect.TypeOf(&builder),
+		Type:      reflect.TypeOf(builder),
 	}
 }
 
@@ -49,7 +53,6 @@ func (m *MetaDataManager) register(builder IBuilder) {
 	if _, ok := m.builderMetaMap[builderMeta.Name]; ok {
 		panic("Builder already exists")
 	}
-
 	m.builders[builderMeta.Name] = builder
 	m.builderMetaMap[builderMeta.Name] = builderMeta
 	m.producedToProducerMap[builderMeta.Produces] = builderMeta
