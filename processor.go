@@ -15,6 +15,11 @@ type Executor struct {
 
 func checkForConsumes(dataSet *DataSet, builderInfo BuilderInfo) bool {
 	fmt.Println(builderInfo)
+	for _, consumes := range builderInfo.Consumes {
+		if _, ok := dataSet.AvailableData[Name(consumes)]; !ok {
+			return false
+		}
+	}
 	return true
 }
 
@@ -55,8 +60,7 @@ func (e *Executor) Run(workflowKey string, workflowId string, data ...IData) Dat
 				e.Before()
 
 				response := builder.Process(BuilderContext{
-					DataSet:     dataSet,
-					ContextData: nil,
+					DataSet: dataSet,
 				})
 				if response != nil {
 					if Name(response) != builderMeta.Produces {
