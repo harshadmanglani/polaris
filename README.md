@@ -1,4 +1,4 @@
-<src img="https://raw.githubusercontent.com/harshadmanglani/Assets/master/Polaris.jpg">
+<img src="https://raw.githubusercontent.com/harshadmanglani/Assets/master/Polaris.jpg">
 
 An extremely light weight workflow orchestrator for Golang.
 
