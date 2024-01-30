@@ -13,7 +13,6 @@ type Executor struct {
 }
 
 func checkForConsumes(dataSet *DataSet, builderInfo BuilderInfo) bool {
-	fmt.Println(builderInfo)
 	for _, consumes := range builderInfo.Consumes {
 		if _, ok := dataSet.AvailableData[Name(consumes)]; !ok {
 			return false
@@ -41,8 +40,10 @@ func (e *Executor) Run(workflowKey string, workflowId string, data ...IData) Dat
 	newlyGeneratedData := mapset.NewSet[string]()
 
 	for true {
-		for _, levelBuilders := range depedencyHierarchy.DependencyHierarchy {
-			for _, builderMeta := range levelBuilders {
+		for i, levelBuilders := range depedencyHierarchy.DependencyHierarchy {
+			fmt.Printf("At level %d\t size: %d\t", i, len(levelBuilders))
+			for j, builderMeta := range levelBuilders {
+				fmt.Printf("At builder %d\n", j)
 				// implement go routines here
 				if processedBuilders.Contains(builderMeta) {
 					continue
@@ -51,7 +52,7 @@ func (e *Executor) Run(workflowKey string, workflowId string, data ...IData) Dat
 				if builderMeta.EffectiveConsumes().Intersect(activeDataSet).IsEmpty() {
 					continue
 				}
-				fmt.Println(builderMeta)
+				fmt.Println("Will run ", builderMeta.Name)
 				builder := reflect.New(builderMeta.Type).Interface().(IBuilder)
 
 				if !checkForConsumes(&dataSet, builder.GetBuilderInfo()) {
@@ -64,7 +65,7 @@ func (e *Executor) Run(workflowKey string, workflowId string, data ...IData) Dat
 				})
 				if response != nil {
 					if Name(response) != builderMeta.Produces {
-						// throw error
+						panic("Did not produce data it was supposed to!")
 					}
 					dataSet.AvailableData[Name(response)] = response
 					activeDataSet.Add(Name(response))
@@ -81,6 +82,9 @@ func (e *Executor) Run(workflowKey string, workflowId string, data ...IData) Dat
 		if newlyGeneratedData.IsEmpty() {
 			break
 		}
+		activeDataSet.Clear()
+		activeDataSet = activeDataSet.Union(newlyGeneratedData)
+		newlyGeneratedData.Clear()
 	}
 
 	return DataExecutionResponse{

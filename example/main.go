@@ -131,7 +131,7 @@ func (rC RiskChecker2) Process(context polaris.BuilderContext) polaris.IData {
 	// read from db
 	// do some risk checks with a downstream service
 	// throw an error if checks fail
-	return RiskCheck1Completed{}
+	return RiskCheck2Completed{}
 }
 
 func (rC RiskChecker2) GetBuilderInfo() polaris.BuilderInfo {
@@ -263,10 +263,11 @@ func main() {
 			fmt.Println("After execution")
 		},
 	}
-	e.Run("OMSWORKFLOW", "someUniqueId", OrderRequest{
+	responses := e.Run("OMSWORKFLOW", "someUniqueId", OrderRequest{
 		ProductId: 12,
 		Qty:       1,
 		UserId:    "abcd",
 		AddressId: "1234",
 	})
+	fmt.Println(responses)
 }
