@@ -8,9 +8,8 @@ import (
 )
 
 type Executor struct {
-	Before  func()
-	After   func()
-	OnError func()
+	Before func(builder reflect.Type, delta []IData) // TODO: add trigger delta
+	After  func(builder reflect.Type, produced IData)
 }
 
 func checkForConsumes(dataSet *DataSet, builderInfo BuilderInfo) bool {
@@ -44,6 +43,7 @@ func (e *Executor) Run(workflowKey string, workflowId string, data ...IData) Dat
 	for true {
 		for _, levelBuilders := range depedencyHierarchy.DependencyHierarchy {
 			for _, builderMeta := range levelBuilders {
+				// implement go routines here
 				if processedBuilders.Contains(builderMeta) {
 					continue
 				}
@@ -57,7 +57,7 @@ func (e *Executor) Run(workflowKey string, workflowId string, data ...IData) Dat
 				if !checkForConsumes(&dataSet, builder.GetBuilderInfo()) {
 					continue
 				}
-				e.Before()
+				e.Before(builderMeta.Type, data)
 
 				response := builder.Process(BuilderContext{
 					DataSet: dataSet,
@@ -72,7 +72,7 @@ func (e *Executor) Run(workflowKey string, workflowId string, data ...IData) Dat
 					responseData[Name(response)] = response
 				}
 				processedBuilders.Add(builderMeta)
-				e.After()
+				e.After(builderMeta.Type, response)
 			}
 		}
 		if newlyGeneratedData.Contains(depedencyHierarchy.TargetData) {

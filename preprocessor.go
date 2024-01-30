@@ -2,7 +2,9 @@ package polaris
 
 import (
 	"container/list"
+	"fmt"
 	"reflect"
+	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
 )
@@ -11,6 +13,7 @@ var workflowStore map[string]DataFlow
 var dataStore map[string]DataSet
 
 func init() {
+	fmt.Println("in init preprocessor")
 	workflowStore = make(map[string]DataFlow)
 	dataStore = make(map[string]DataSet)
 	// This is where redis client would be initialized
@@ -69,7 +72,13 @@ type DataFlow struct {
 	// TODO: implement ResolutionSpec
 }
 
+func logTimeSince(message string, past time.Time) {
+	fmt.Printf("%s: %s", message, time.Since(past))
+}
+
 func RegisterWorkflow(workflowKey string, workflow IWorkflow) {
+	now := time.Now()
+	defer logTimeSince("Time to register "+Name(workflow), now)
 	metaDataManager := newMetaDataManager()
 	for _, b := range workflow.GetWorkflowMeta().Builders {
 		metaDataManager.register(b)

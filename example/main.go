@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/harshadmanglani/polaris"
@@ -255,13 +256,10 @@ func main() {
 	polaris.RegisterWorkflow("OMSWORKFLOW", OmsWorkflow{})
 
 	e := polaris.Executor{
-		OnError: func() {
-			fmt.Println("An error occurred")
-		},
-		Before: func() {
+		Before: func(builder reflect.Type, delta []polaris.IData) {
 			fmt.Println("Before execution")
 		},
-		After: func() {
+		After: func(builder reflect.Type, produced polaris.IData) {
 			fmt.Println("After execution")
 		},
 	}
