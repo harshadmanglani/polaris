@@ -71,7 +71,9 @@ func (e *Executor) Sequential(workflowKey string, workflowId string, data ...IDa
 				if !checkForConsumes(&dataSet, builder.GetBuilderInfo()) {
 					continue
 				}
-				e.Before(builderMeta.Type, data)
+				if e.Before != nil {
+					e.Before(builderMeta.Type, data)
+				}
 
 				response := builder.Process(BuilderContext{
 					DataSet: dataSet,
@@ -87,7 +89,10 @@ func (e *Executor) Sequential(workflowKey string, workflowId string, data ...IDa
 					responseData[Name(response)] = response
 				}
 				processedBuilders.Add(builderMeta)
-				e.After(builderMeta.Type, response)
+
+				if e.After != nil {
+					e.After(builderMeta.Type, response)
+				}
 			}
 		}
 		if newlyGeneratedData.Contains(dataFlow.TargetData) {
@@ -106,6 +111,9 @@ func (e *Executor) Sequential(workflowKey string, workflowId string, data ...IDa
 	}, nil
 }
 
+/*
+ * This is experimental and severely untested. Use with caution.
+ */
 func (e *Executor) Parallel(workflowKey string, workflowId string, data ...IData) (DataExecutionResponse, error) {
 
 	var dataSet DataSet
@@ -170,28 +178,31 @@ func (e *Executor) executeBuilder(processedBuilders mapset.Set[BuilderMeta],
 	wg *sync.WaitGroup) {
 
 	if processedBuilders.Contains(builderMeta) {
-		// continue
+		wg.Done()
 		return
 	}
 
 	if builderMeta.EffectiveConsumes().Intersect(activeDataSet).IsEmpty() {
-		// continue
+		wg.Done()
 		return
 	}
 	builder := reflect.New(builderMeta.Type).Interface().(IBuilder)
 
 	if !checkForConsumes(&dataSet, builder.GetBuilderInfo()) {
-		// continue
+		wg.Done()
 		return
 	}
-	e.Before(builderMeta.Type, data)
 
+	if e.Before != nil {
+		e.Before(builderMeta.Type, data)
+	}
 	response := builder.Process(BuilderContext{
 		DataSet: dataSet,
 	})
 	if response != nil {
 		if Name(response) != builderMeta.Produces {
 			sugar.Errorf("Builder %s did not produce %s, instead it produced %s", builderMeta.Name, builderMeta.Produces, Name(response))
+			wg.Done()
 			return
 			// TODO: return error here
 		}
@@ -201,6 +212,8 @@ func (e *Executor) executeBuilder(processedBuilders mapset.Set[BuilderMeta],
 		responseData[Name(response)] = response
 	}
 	processedBuilders.Add(builderMeta)
-	e.After(builderMeta.Type, response)
+	if e.After != nil {
+		e.After(builderMeta.Type, response)
+	}
 	wg.Done()
 }

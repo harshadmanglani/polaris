@@ -6,127 +6,6 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
-type WorkflowTerminated struct {
-}
-
-type AlphaConsumes struct {
-}
-
-type AlphaProduces struct {
-}
-
-type BetaProduces struct {
-}
-
-type AlphaBuilder struct {
-}
-
-func (a AlphaBuilder) Process(context BuilderContext) IData {
-	return AlphaProduces{}
-}
-
-func (a AlphaBuilder) GetBuilderInfo() BuilderInfo {
-	return BuilderInfo{
-		Consumes: []IData{
-			AlphaConsumes{},
-		},
-		Produces:  AlphaProduces{},
-		Optionals: nil,
-		Accesses:  nil,
-	}
-}
-
-type BetaBuilder struct {
-}
-
-func (b BetaBuilder) Process(context BuilderContext) IData {
-	return AlphaProduces{}
-}
-
-func (b BetaBuilder) GetBuilderInfo() BuilderInfo {
-	return BuilderInfo{
-		Consumes: []IData{
-			AlphaProduces{},
-		},
-		Produces:  BetaProduces{},
-		Optionals: nil,
-		Accesses:  nil,
-	}
-}
-
-type Terminator struct {
-}
-
-func (t Terminator) Process(context BuilderContext) IData {
-	return WorkflowTerminated{}
-}
-
-func (t Terminator) GetBuilderInfo() BuilderInfo {
-	return BuilderInfo{
-		Consumes: []IData{
-			AlphaProduces{},
-			BetaProduces{},
-		},
-		Produces:  WorkflowTerminated{},
-		Optionals: nil,
-		Accesses:  nil,
-	}
-}
-
-type TestWorkflow struct {
-}
-
-func (tW TestWorkflow) GetWorkflowMeta() WorkflowMeta {
-	return WorkflowMeta{
-		Builders: []IBuilder{
-			AlphaBuilder{},
-			BetaBuilder{},
-			Terminator{},
-		},
-		TargetData: WorkflowTerminated{},
-	}
-}
-
-type RedundantBuilderFailureWorklow struct {
-}
-
-func (rBFW RedundantBuilderFailureWorklow) GetWorkflowMeta() WorkflowMeta {
-	return WorkflowMeta{
-		Builders: []IBuilder{
-			AlphaBuilder{},
-			AlphaBuilder{},
-			Terminator{},
-		},
-		TargetData: WorkflowTerminated{},
-	}
-}
-
-type EmptyTargetDataWorkflow struct {
-}
-
-func (eTDW EmptyTargetDataWorkflow) GetWorkflowMeta() WorkflowMeta {
-	return WorkflowMeta{
-		Builders: []IBuilder{
-			AlphaBuilder{},
-			BetaBuilder{},
-			Terminator{},
-		},
-	}
-}
-
-type MockStorage struct {
-	store map[string]interface{}
-}
-
-func (ms *MockStorage) Read(key string) (interface{}, bool) {
-	val, ok := ms.store[key]
-	return val, ok
-}
-
-func (ms *MockStorage) Write(key string, val interface{}) {
-	ms.store[key] = val
-}
-
 func TestRegisterWorkflow(t *testing.T) {
 	type args struct {
 		workflowKey string
@@ -143,33 +22,33 @@ func TestRegisterWorkflow(t *testing.T) {
 			name: "Base_Successful_Test",
 			args: args{
 				workflowKey: "testWorkflow",
-				workflow:    TestWorkflow{},
+				workflow:    testWorkflow{},
 			},
 			wantErr: false,
 			wantHierarchy: [][]BuilderMeta{
 				{
 					{
-						Name:      Name(AlphaBuilder{}),
-						Consumes:  mapset.NewSet[string](Name(AlphaConsumes{})),
-						Produces:  Name(AlphaProduces{}),
+						Name:      Name(alphaBuilder{}),
+						Consumes:  mapset.NewSet[string](Name(alphaConsumes{})),
+						Produces:  Name(alphaProduces{}),
 						Optionals: mapset.NewSet[string](),
 						Accesses:  mapset.NewSet[string](),
 					},
 				},
 				{
 					{
-						Name:      Name(BetaBuilder{}),
-						Consumes:  mapset.NewSet[string](Name(AlphaProduces{})),
-						Produces:  Name(BetaProduces{}),
+						Name:      Name(betaBuilder{}),
+						Consumes:  mapset.NewSet[string](Name(alphaProduces{})),
+						Produces:  Name(betaProduces{}),
 						Optionals: mapset.NewSet[string](),
 						Accesses:  mapset.NewSet[string](),
 					},
 				},
 				{
 					{
-						Name:      Name(Terminator{}),
-						Consumes:  mapset.NewSet[string](Name(AlphaProduces{}), Name(BetaProduces{})),
-						Produces:  Name(WorkflowTerminated{}),
+						Name:      Name(terminator{}),
+						Consumes:  mapset.NewSet[string](Name(alphaProduces{}), Name(betaProduces{})),
+						Produces:  Name(workflowTerminated{}),
 						Optionals: mapset.NewSet[string](),
 						Accesses:  mapset.NewSet[string](),
 					},
@@ -180,7 +59,7 @@ func TestRegisterWorkflow(t *testing.T) {
 			name: "Redundant_Builder_Failure_Test",
 			args: args{
 				workflowKey: "redundantBuilderWorkflow",
-				workflow:    RedundantBuilderFailureWorklow{},
+				workflow:    redundantBuilderFailureWorklow{},
 			},
 			wantErr:            true,
 			skipHierarchyCheck: true,
@@ -189,13 +68,13 @@ func TestRegisterWorkflow(t *testing.T) {
 			name: "Empty_Target_Data_Failure_Test",
 			args: args{
 				workflowKey: "emptyTargetDataWorkflow",
-				workflow:    EmptyTargetDataWorkflow{},
+				workflow:    emptyTargetDataWorkflow{},
 			},
 			wantErr:            true,
 			skipHierarchyCheck: true,
 		},
 	}
-	mockStorage := &MockStorage{
+	mockStorage := &mockStorage{
 		store: make(map[string]interface{}),
 	}
 	InitRegistry(mockStorage)
