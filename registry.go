@@ -9,28 +9,30 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
-var workflowStore map[string]DataFlow
-var dataStore map[string]DataSet
+var dataStore IDataStore
 
-func init() {
-	fmt.Println("in init preprocessor")
-	workflowStore = make(map[string]DataFlow)
-	dataStore = make(map[string]DataSet)
-	// This is where redis client would be initialized
+func InitRegistry(ds IDataStore) {
+	dataStore = ds
 }
 
-type MetaDataManager struct {
-	builders              map[string]IBuilder
-	builderMetaMap        map[string]BuilderMeta
-	producedToProducerMap map[string]BuilderMeta // TODO: make this []BuilderMeta when ResolutionSpec is implemented
-}
-
-func newMetaDataManager() MetaDataManager {
-	return MetaDataManager{
-		builders:              make(map[string]IBuilder),
-		builderMetaMap:        make(map[string]BuilderMeta),
-		producedToProducerMap: make(map[string]BuilderMeta),
+func RegisterWorkflow(workflowKey string, workflow IWorkflow) error {
+	if dataStore == nil {
+		sugar.Errorf("Datastore uninitialized. Could not register: ", reflect.TypeOf(workflow))
+		return fmt.Errorf("DATASTORE_UNINITIALIZED")
 	}
+	sugar.Info("Registering workflow: ", reflect.TypeOf(workflow))
+	defer logTimeSince(fmt.Sprintf("Registering %s took ", reflect.TypeOf(workflow)), time.Now())
+
+	metaDataManager := newMetaDataManager(workflow)
+
+	dataFlow := DataFlow{
+		Name:                Name(workflow),
+		TargetData:          Name(workflow.GetWorkflowMeta().TargetData),
+		metaDataManager:     metaDataManager,
+		DependencyHierarchy: generateDependencyHierarchy(&metaDataManager),
+	}
+	dataStore.Write(workflowKey, dataFlow)
+	return nil
 }
 
 func buildSet(data []IData) mapset.Set[string] {
@@ -53,16 +55,6 @@ func newBuilderMeta(builder IBuilder) BuilderMeta {
 	}
 }
 
-func (m *MetaDataManager) register(builder IBuilder) {
-	builderMeta := newBuilderMeta(builder)
-	if _, ok := m.builderMetaMap[builderMeta.Name]; ok {
-		panic("Builder already exists")
-	}
-	m.builders[builderMeta.Name] = builder
-	m.builderMetaMap[builderMeta.Name] = builderMeta
-	m.producedToProducerMap[builderMeta.Produces] = builderMeta
-}
-
 type DataFlow struct {
 	Name                string
 	TargetData          string
@@ -73,31 +65,14 @@ type DataFlow struct {
 }
 
 func logTimeSince(message string, past time.Time) {
-	fmt.Printf("%s: %s", message, time.Since(past))
-}
-
-func RegisterWorkflow(workflowKey string, workflow IWorkflow) {
-	now := time.Now()
-	defer logTimeSince("Time to register "+Name(workflow), now)
-	metaDataManager := newMetaDataManager()
-	for _, b := range workflow.GetWorkflowMeta().Builders {
-		metaDataManager.register(b)
-	}
-	dataFlow := DataFlow{
-		Name:                Name(workflow),
-		TargetData:          Name(workflow.GetWorkflowMeta().TargetData),
-		metaDataManager:     metaDataManager,
-		DependencyHierarchy: preprocess(&metaDataManager),
-	}
-	workflowStore[workflowKey] = dataFlow
+	sugar.Info(message, time.Since(past))
 }
 
 // TODO:
 // 1. refactor to optimize
-// 2. measure time
-// 3. rename
 // 4. add error handling for null target data
-func preprocess(metaDataManager *MetaDataManager) [][]BuilderMeta {
+func generateDependencyHierarchy(metaDataManager *MetaDataManager) [][]BuilderMeta {
+
 	dependencyGraph := make(map[string][]BuilderMeta)
 	inDegree := make(map[string]int, 0)
 	depedencyHierarchy := make([][]BuilderMeta, 0)

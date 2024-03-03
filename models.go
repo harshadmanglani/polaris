@@ -1,11 +1,25 @@
 package polaris
 
 import (
+	"log"
 	"reflect"
 	"strings"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	"go.uber.org/zap"
 )
+
+var sugar *zap.SugaredLogger
+
+func init() {
+	logger, err := zap.NewProduction()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	sugar = logger.Sugar()
+	defer logger.Sync()
+}
 
 type IWorkflow interface {
 	GetWorkflowMeta() WorkflowMeta
@@ -25,6 +39,7 @@ type DataSet struct {
 
 type DataExecutionResponse struct {
 	Responses map[string]IData
+	Error     error
 }
 
 var structToNameMapping = make(map[reflect.Type]string)
