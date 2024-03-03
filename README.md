@@ -42,15 +42,20 @@ The framework itself has extremely low overhead. Since execution graphs are gene
 ## Usage
 
 ```
+// dataStore = DataStore{} - use your database by implementing the IDataStore interface
+polaris.InitRegistry(dataStore)
 polaris.RegisterWorkflow(workflowKey, workflow)
 
 executor := polaris.Executor{
-	before: nil
-	after: nil
-	onError: nil
+	Before: func(builder reflect.Type, delta []IData) {
+        fmt.Printf("Builder %s is about to be run with new data %v\n", builder, delta)
+    }
+	After: func(builder reflect.Type, produced IData) {
+        fmt.Printf("Builder %s produced %s\n", builder, produced)
+    }
 }
 
-response := executor.Run(workflowKey, workflowId, dataDelta)
+response, err := executor.Run(workflowKey, workflowId, dataDelta)
 ```
 
 1. Stores workflow's execution graph against the workflowKey in Redis
