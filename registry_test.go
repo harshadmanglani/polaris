@@ -87,6 +87,33 @@ func (tW TestWorkflow) GetWorkflowMeta() WorkflowMeta {
 	}
 }
 
+type RedundantBuilderFailureWorklow struct {
+}
+
+func (rBFW RedundantBuilderFailureWorklow) GetWorkflowMeta() WorkflowMeta {
+	return WorkflowMeta{
+		Builders: []IBuilder{
+			AlphaBuilder{},
+			AlphaBuilder{},
+			Terminator{},
+		},
+		TargetData: WorkflowTerminated{},
+	}
+}
+
+type EmptyTargetDataWorkflow struct {
+}
+
+func (eTDW EmptyTargetDataWorkflow) GetWorkflowMeta() WorkflowMeta {
+	return WorkflowMeta{
+		Builders: []IBuilder{
+			AlphaBuilder{},
+			BetaBuilder{},
+			Terminator{},
+		},
+	}
+}
+
 type MockStorage struct {
 	store map[string]interface{}
 }
@@ -106,10 +133,11 @@ func TestRegisterWorkflow(t *testing.T) {
 		workflow    IWorkflow
 	}
 	tests := []struct {
-		name          string
-		args          args
-		wantErr       bool
-		wantHierarchy [][]BuilderMeta
+		name               string
+		args               args
+		wantErr            bool
+		skipHierarchyCheck bool
+		wantHierarchy      [][]BuilderMeta
 	}{
 		{
 			name: "Base_Successful_Test",
@@ -148,6 +176,24 @@ func TestRegisterWorkflow(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Redundant_Builder_Failure_Test",
+			args: args{
+				workflowKey: "redundantBuilderWorkflow",
+				workflow:    RedundantBuilderFailureWorklow{},
+			},
+			wantErr:            true,
+			skipHierarchyCheck: true,
+		},
+		{
+			name: "Empty_Target_Data_Failure_Test",
+			args: args{
+				workflowKey: "emptyTargetDataWorkflow",
+				workflow:    EmptyTargetDataWorkflow{},
+			},
+			wantErr:            true,
+			skipHierarchyCheck: true,
+		},
 	}
 	mockStorage := &MockStorage{
 		store: make(map[string]interface{}),
@@ -159,28 +205,38 @@ func TestRegisterWorkflow(t *testing.T) {
 				t.Errorf("RegisterWorkflow() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
+			if tt.skipHierarchyCheck {
+				return
+			}
+
 			dataFlowInterface, _ := mockStorage.Read(tt.args.workflowKey)
 			dataFlow := dataFlowInterface.(DataFlow)
+			gotHierarchy := dataFlow.DependencyHierarchy
+			wantHierarchy := tt.wantHierarchy
 
-			for level := range dataFlow.DependencyHierarchy {
-				for index, builder := range dataFlow.DependencyHierarchy[level] {
-					if tt.wantHierarchy[level][index].Name != builder.Name {
-						t.Errorf("Builder Name %s does not match %s at %d %d", tt.wantHierarchy[level][index].Name, builder.Name, level, index)
-					}
-					if !tt.wantHierarchy[level][index].Consumes.Equal(builder.Consumes) {
-						t.Errorf("Builder Consumes %s does not match %s at %d %d", tt.wantHierarchy[level][index].Consumes, builder.Consumes, level, index)
-					}
-					if !tt.wantHierarchy[level][index].Accesses.Equal(builder.Accesses) {
-						t.Errorf("Builder Accesses %s does not match %s at %d %d", tt.wantHierarchy[level][index].Accesses, builder.Accesses, level, index)
-					}
-					if !tt.wantHierarchy[level][index].Optionals.Equal(builder.Optionals) {
-						t.Errorf("Builder Optionals %s does not match %s at %d %d", tt.wantHierarchy[level][index].Optionals, builder.Optionals, level, index)
-					}
-					if tt.wantHierarchy[level][index].Produces != builder.Produces {
-						t.Errorf("Builder Produces %s does not match %s at %d %d", tt.wantHierarchy[level][index].Produces, builder.Produces, level, index)
-					}
-				}
-			}
+			compareHierarchies(wantHierarchy, gotHierarchy, t)
 		})
+	}
+}
+
+func compareHierarchies(wantHierarchy [][]BuilderMeta, gotHierarchy [][]BuilderMeta, t *testing.T) {
+	for level := range gotHierarchy {
+		for index, builder := range gotHierarchy[level] {
+			if wantHierarchy[level][index].Name != builder.Name {
+				t.Errorf("Builder Name %s does not match %s at %d %d", wantHierarchy[level][index].Name, builder.Name, level, index)
+			}
+			if !wantHierarchy[level][index].Consumes.Equal(builder.Consumes) {
+				t.Errorf("Builder Consumes %s does not match %s at %d %d", wantHierarchy[level][index].Consumes, builder.Consumes, level, index)
+			}
+			if !wantHierarchy[level][index].Accesses.Equal(builder.Accesses) {
+				t.Errorf("Builder Accesses %s does not match %s at %d %d", wantHierarchy[level][index].Accesses, builder.Accesses, level, index)
+			}
+			if !wantHierarchy[level][index].Optionals.Equal(builder.Optionals) {
+				t.Errorf("Builder Optionals %s does not match %s at %d %d", wantHierarchy[level][index].Optionals, builder.Optionals, level, index)
+			}
+			if wantHierarchy[level][index].Produces != builder.Produces {
+				t.Errorf("Builder Produces %s does not match %s at %d %d", wantHierarchy[level][index].Produces, builder.Produces, level, index)
+			}
+		}
 	}
 }

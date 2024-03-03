@@ -8,7 +8,7 @@ type MetaDataManager struct {
 	producedToProducerMap map[string]BuilderMeta // TODO: make this []BuilderMeta when ResolutionSpec is implemented
 }
 
-func newMetaDataManager(workflow IWorkflow) MetaDataManager {
+func newMetaDataManager(workflow IWorkflow) (MetaDataManager, error) {
 	metaDataManager := MetaDataManager{
 		builders:              make(map[string]IBuilder),
 		builderMetaMap:        make(map[string]BuilderMeta),
@@ -16,9 +16,12 @@ func newMetaDataManager(workflow IWorkflow) MetaDataManager {
 	}
 
 	for _, b := range workflow.GetWorkflowMeta().Builders {
-		metaDataManager.registerBuilder(b)
+		err := metaDataManager.registerBuilder(b)
+		if err != nil {
+			return metaDataManager, err
+		}
 	}
-	return metaDataManager
+	return metaDataManager, nil
 }
 
 func (m *MetaDataManager) registerBuilder(builder IBuilder) error {

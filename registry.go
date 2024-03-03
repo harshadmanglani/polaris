@@ -20,18 +20,23 @@ func RegisterWorkflow(workflowKey string, workflow IWorkflow) error {
 		sugar.Errorf("Datastore uninitialized. Could not register: ", reflect.TypeOf(workflow))
 		return fmt.Errorf("DATASTORE_UNINITIALIZED")
 	}
-	sugar.Info("Registering workflow: ", reflect.TypeOf(workflow))
-	defer logTimeSince(fmt.Sprintf("Registering %s took ", reflect.TypeOf(workflow)), time.Now())
 
-	metaDataManager := newMetaDataManager(workflow)
-
-	dataFlow := DataFlow{
-		Name:                Name(workflow),
-		TargetData:          Name(workflow.GetWorkflowMeta().TargetData),
-		metaDataManager:     metaDataManager,
-		DependencyHierarchy: generateDependencyHierarchy(&metaDataManager),
+	if workflow.GetWorkflowMeta().TargetData == nil {
+		sugar.Errorf("Empty target data. Could not register: ", reflect.TypeOf(workflow))
+		return fmt.Errorf("TARGET_DATA_NIL")
 	}
+
+	sugar.Infof("Registering workflow: %s", reflect.TypeOf(workflow))
+
+	metaDataManager, err := newMetaDataManager(workflow)
+	if err != nil {
+		return err
+	}
+
+	dataFlow := newDataFlow(workflow, &metaDataManager)
 	dataStore.Write(workflowKey, dataFlow)
+
+	sugar.Infof("Registering %s took ", reflect.TypeOf(workflow), time.Now())
 	return nil
 }
 
@@ -60,17 +65,17 @@ type DataFlow struct {
 	TargetData          string
 	DependencyHierarchy [][]BuilderMeta
 	metaDataManager     MetaDataManager
-	// TODO: implement Transients
-	// TODO: implement ResolutionSpec
 }
 
-func logTimeSince(message string, past time.Time) {
-	sugar.Info(message, time.Since(past))
+func newDataFlow(workflow IWorkflow, metaDataManager *MetaDataManager) DataFlow {
+	return DataFlow{
+		Name:                Name(workflow),
+		TargetData:          Name(workflow.GetWorkflowMeta().TargetData),
+		metaDataManager:     *metaDataManager,
+		DependencyHierarchy: generateDependencyHierarchy(metaDataManager),
+	}
 }
 
-// TODO:
-// 1. refactor to optimize
-// 4. add error handling for null target data
 func generateDependencyHierarchy(metaDataManager *MetaDataManager) [][]BuilderMeta {
 
 	dependencyGraph := make(map[string][]BuilderMeta)

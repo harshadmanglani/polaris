@@ -39,7 +39,6 @@ type DataSet struct {
 
 type DataExecutionResponse struct {
 	Responses map[string]IData
-	Error     error
 }
 
 var structToNameMapping = make(map[reflect.Type]string)

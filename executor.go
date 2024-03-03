@@ -22,19 +22,31 @@ func checkForConsumes(dataSet *DataSet, builderInfo BuilderInfo) bool {
 	return true
 }
 
-func (e *Executor) Sequential(workflowKey string, workflowId string, data ...IData) DataExecutionResponse {
+func (e *Executor) Sequential(workflowKey string, workflowId string, data ...IData) (DataExecutionResponse, error) {
 
-	dataFlowInterface, _ := dataStore.Read(workflowKey) // TODO: add error handling
-	dataSetInterface, _ := dataStore.Read(workflowId)
-	dataSet := dataSetInterface.(DataSet)
-	dataFlow := dataFlowInterface.(DataFlow)
+	if dataStore == nil {
+		sugar.Errorf("Datastore uninitialized. Could not run workflow with key: ", workflowKey)
+		return DataExecutionResponse{}, fmt.Errorf("DATASTORE_UNINITIALIZED")
+	}
 
-	responseData := make(map[string]IData)
-	if _, ok := dataStore.Read(workflowId); !ok {
+	var dataSet DataSet
+	var dataFlow DataFlow
+	if dataFlowInterface, ok := dataStore.Read(workflowKey); !ok {
+		return DataExecutionResponse{}, fmt.Errorf("WORKFLOW_KEY_NOT_FOUND")
+	} else {
+		dataFlow = dataFlowInterface.(DataFlow)
+	}
+
+	if dataSetInterface, ok := dataStore.Read(workflowId); !ok {
 		dataSet = DataSet{
 			AvailableData: make(map[string]IData),
 		}
+	} else {
+		dataSet = dataSetInterface.(DataSet)
 	}
+
+	responseData := make(map[string]IData)
+
 	activeDataSet := mapset.NewSet[string]()
 	for _, d := range data {
 		dataSet.AvailableData[Name(d)] = d
@@ -67,9 +79,7 @@ func (e *Executor) Sequential(workflowKey string, workflowId string, data ...IDa
 				if response != nil {
 					if Name(response) != builderMeta.Produces {
 						sugar.Errorf("Builder %s did not produce %s, instead it produced %s", builderMeta.Name, builderMeta.Produces, Name(response))
-						return DataExecutionResponse{
-							Error: fmt.Errorf("INVALID_PRODUCED_DATA"),
-						}
+						return DataExecutionResponse{}, fmt.Errorf("INVALID_PRODUCED_DATA")
 					}
 					dataSet.AvailableData[Name(response)] = response
 					activeDataSet.Add(Name(response))
@@ -93,24 +103,29 @@ func (e *Executor) Sequential(workflowKey string, workflowId string, data ...IDa
 
 	return DataExecutionResponse{
 		Responses: responseData,
-		Error:     nil,
-	}
+	}, nil
 }
 
-func (e *Executor) Parallel(workflowKey string, workflowId string, data ...IData) DataExecutionResponse {
+func (e *Executor) Parallel(workflowKey string, workflowId string, data ...IData) (DataExecutionResponse, error) {
 
-	dataFlowInterface, _ := dataStore.Read(workflowKey) // TODO: add error handling
-	dataSetInterface, _ := dataStore.Read(workflowId)
-	dataSet := dataSetInterface.(DataSet)
-	dataFlow := dataFlowInterface.(DataFlow)
+	var dataSet DataSet
+	var dataFlow DataFlow
+	if dataFlowInterface, ok := dataStore.Read(workflowKey); !ok {
+		return DataExecutionResponse{}, fmt.Errorf("WORKFLOW_KEY_NOT_FOUND")
+	} else {
+		dataFlow = dataFlowInterface.(DataFlow)
+	}
 
-	// redundant read - TODO: fix this
-	responseData := make(map[string]IData)
-	if _, ok := dataStore.Read(workflowId); !ok {
+	if dataSetInterface, ok := dataStore.Read(workflowId); !ok {
 		dataSet = DataSet{
 			AvailableData: make(map[string]IData),
 		}
+	} else {
+		dataSet = dataSetInterface.(DataSet)
 	}
+
+	responseData := make(map[string]IData)
+
 	activeDataSet := mapset.NewSet[string]()
 	for _, d := range data {
 		dataSet.AvailableData[Name(d)] = d
@@ -142,7 +157,7 @@ func (e *Executor) Parallel(workflowKey string, workflowId string, data ...IData
 
 	return DataExecutionResponse{
 		Responses: responseData,
-	}
+	}, nil
 }
 
 func (e *Executor) executeBuilder(processedBuilders mapset.Set[BuilderMeta],
