@@ -11,18 +11,18 @@ go get github.com/harshadmanglani/polaris@v1.0.0
 ```
 ### Usage
 
-```
+```go
 // dataStore = DataStore{} - use your database by implementing the IDataStore interface
 polaris.InitRegistry(dataStore)
 polaris.RegisterWorkflow(workflowKey, workflow)
 
 executor := polaris.Executor{
 	Before: func(builder reflect.Type, delta []IData) {
-        fmt.Printf("Builder %s is about to be run with new data %v\n", builder, delta)
-    }
+		fmt.Printf("Builder %s is about to be run with new data %v\n", builder, delta)
+	},
 	After: func(builder reflect.Type, produced IData) {
-        fmt.Printf("Builder %s produced %s\n", builder, produced)
-    }
+		fmt.Printf("Builder %s produced %s\n", builder, produced)
+	},
 }
 
 response, err := executor.Run(workflowKey, workflowId, dataDelta)
