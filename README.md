@@ -1,6 +1,8 @@
-<img src="https://raw.githubusercontent.com/harshadmanglani/Assets/master/Polaris.jpg">
+<div style="text-align:center">
+<img src="docs/assets/img/logo.jpg" height="200" width="200">
 
 An extremely light weight workflow orchestrator for Golang.
+</div>
 
 Inspired from https://github.com/flipkart-incubator/databuilderframework
 
@@ -10,9 +12,64 @@ From the root of your Go module, run:
 go get github.com/harshadmanglani/polaris@v1.0.0
 ```
 ### Usage
+<details>
+    <summary>Defining a builder</summary>
+  
+    A builder is a unit of work in the workflow</p>
+    Essentially, for a cab ride workflow, units of work could be:
+    - User initiating a request
+    - Cabbie accepting
+    - Cabbie reaches source
+    - Ride starts
+    - Cabbie reaches destination
+    - User makes payment
+    - Ride ends
+    
+    ```
+    var database Database
+    var cabbieHttpClient CabbieHttpClient 
+
+    type UserInitiation struct {
+    }
+
+    func (uI UserInitiation) GetBuilderInfo() BuilderInfo {
+	return BuilderInfo{
+		Consumes: []IData{
+			UserInitiationRequest{},
+		},
+		Produces:  UserInitiationResponse{},
+		Optionals: nil,
+		Accesses:  nil,
+	}
+}
+
+    func (uI UserInitiation) Process(context BuilderContext) IData {
+        userInitReq := context.DataSet.get(UserInitiationRequest{})
+        database.save(userInitReq)
+        cabbieResponse := cabbieHttpClient.request(RideRequest{
+            userId: userInitReq.userId,
+            source: userInitReq.source,
+            dest: userInitReq.dest
+        })
+        return UserInitiationResponse{
+            success: true,
+            etaForCabbie: cabbieResponse.eta
+        }
+    }
+    ```
+</details>
+<details>
+    <summary>Defining a Data</summary>
+    ```
+    ```
+</details>
+<details>
+    <summary>Defining a Workflow</summary>
+    ```
+    ```
+</details>
 
 ```
-// dataStore = DataStore{} - use your database by implementing the IDataStore interface
 polaris.InitRegistry(dataStore)
 polaris.RegisterWorkflow(workflowKey, workflow)
 
@@ -25,7 +82,9 @@ executor := polaris.Executor{
     }
 }
 
-response, err := executor.Run(workflowKey, workflowId, dataDelta)
+response, err := executor.Sequential(workflowKey, workflowId, dataDelta)
+
+response, err := executor.Parallel(workflowKey, workflowId, dataDelta)
 ```
 
 ## Use cases
