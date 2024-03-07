@@ -37,8 +37,8 @@ type DataSet struct {
 	AvailableData map[string]IData
 }
 
-func (ds *DataSet) get(data IData) (IData, bool) {
-	val, ok := ds.AvailableData[Name(data)]
+func (bc *BuilderContext) get(data IData) (IData, bool) {
+	val, ok := bc.DataSet.AvailableData[Name(data)]
 	return val, ok
 }
 
