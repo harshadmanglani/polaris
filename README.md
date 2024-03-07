@@ -1,9 +1,7 @@
 <div align="center">
   <a href="https://harshadmanglani.github.io/polaris">
-    <img src="docs/docs/assets/polaris-header-dark.svg" width="200px" height="200px" />
+    <img src="docs/docs/assets/polaris-header-dark.svg" width="800px" height="800px" />
   </a>
-
-  <h1>Polaris</h1>
 
   <p>
      An extremely light weight workflow orchestrator for Golang.
