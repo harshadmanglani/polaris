@@ -1,9 +1,11 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 ---
-# Creating Workflows
+# Usage
 
-## Defining a Workflow
+## Creating Workflows
+
+### Defining a Workflow
 A Workflow is a sequence of Builders that will perform some work. Let's take the example of a cab ride workflow. Essentially, for a cab ride workflow, builders (units of work) could be:
     - User initiating a request
     - Cabbie match
@@ -27,13 +29,13 @@ type CabRideWorkflow struct {
 func (cr CabRideWorkflow) GetWorkflowMeta() WorkflowMeta {
 	return WorkflowMeta{
 		Builders: []IBuilder{
-			UserInitiation{},
-			CabbieMatching{},
-			CabbieArrivalAtSource{},
-            CabDepartureFromSource{},
-            CabArrivalAtDest{},
-            UserPayment{},
-            RideEnds{}
+                    UserInitiation{},
+                    CabbieMatching{},
+                    CabbieArrivalAtSource{},
+                    CabDepartureFromSource{},
+                    CabArrivalAtDest{},
+                    UserPayment{},
+                    RideEnds{}
 		},
 		TargetData: WorkflowTerminated{},
 	}
@@ -41,7 +43,7 @@ func (cr CabRideWorkflow) GetWorkflowMeta() WorkflowMeta {
 ```
 You don't have to sequentially define the builders in order of execution. Polaris will figure it out. However, **you should if you can. It helps readability.**
 
-## Defining a Builder
+### Defining a Builder
 
 A Builder is a unit of work in the workflow. Builders must implement the `IBuilder` interface.
 
@@ -88,7 +90,7 @@ func (uI UserInitiation) Process(context BuilderContext) IData {
 }
 ```
 
-## Defining a Data
+### Defining a Data
 
 A Data is a struct that holds the data that will be consumed and/or produced by steps in your workflow.
 These objects must implement the `IData` interface, which basically means that they should be a `struct`.
@@ -101,4 +103,35 @@ type UserInitiationRequest struct{
     source string
     dest string
 }
+```
+
+## Storing Workflows
+
+Workflows need to be stored to a database. Whether you're using a key-value store or RDBMS, you need to implement the `IDataStore` interface and pass it to the `polaris.InitRegistry` method.
+
+```go
+type IDataStore interface {
+	Write(key string, value interface{})
+	Read(key string) (interface{}, bool)
+}
+```
+
+## Running Workflows
+
+```go
+polaris.InitRegistry(dataStore)
+polaris.RegisterWorkflow(workflowKey, workflow)
+
+executor := polaris.Executor{
+	Before: func(builder reflect.Type, delta []IData) {
+        fmt.Printf("Builder %s is about to be run with new data %v\n", builder, delta)
+    }
+	After: func(builder reflect.Type, produced IData) {
+        fmt.Printf("Builder %s produced %s\n", builder, produced)
+    }
+}
+
+response, err := executor.Sequential(workflowKey, workflowId, dataDelta)
+
+response, err := executor.Parallel(workflowKey, workflowId, dataDelta)
 ```

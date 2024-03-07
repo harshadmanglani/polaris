@@ -3,7 +3,7 @@ sidebar_position: 1
 ---
 
 # Introduction
-
+![Light themed header](./assets/polaris-header-light.svg#gh-light-mode-only)![Dark themed header](./assets/polaris-header-dark.svg#gh-dark-mode-only)
 ## What is a workflow?
 A workflow is a series of multiple steps, and can often be long running. 
 
