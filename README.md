@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://harshadmanglani.github.io/polaris">
-    <img src="docs/docs/assets/polaris-header-dark.svg" width="800px" height="800px" />
+    <img src="docs/docs/assets/polaris-header-dark.svg"/>
   </a>
 
   <p>
