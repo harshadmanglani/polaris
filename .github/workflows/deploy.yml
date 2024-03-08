@@ -9,7 +9,7 @@ on:
       - hn_feedback
     paths:
       - '.github/workflows/deploy.yml'
-      - 'website/**'
+      - 'docs/**'
 
 jobs:
   deploy:
@@ -49,4 +49,4 @@ jobs:
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./website/build
+          publish_dir: ./docs/build
