@@ -11,6 +11,10 @@ on:
 permissions:
   contents: write
 
+defaults:
+  run:
+    working-directory: docs
+
 jobs:
   deploy:
     name: Deploy to GitHub Pages
@@ -23,7 +27,6 @@ jobs:
         with:
           node-version: 18
           cache: yarn
-          cache-dependency-path: docs/package-lock.json
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
