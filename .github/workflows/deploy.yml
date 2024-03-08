@@ -10,7 +10,6 @@ on:
     paths:
       - '.github/workflows/deploy.yml'
       - 'website/**'
-  pull_request:
 
 jobs:
   deploy:
