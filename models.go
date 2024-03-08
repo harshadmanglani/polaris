@@ -37,6 +37,11 @@ type DataSet struct {
 	AvailableData map[string]IData
 }
 
+func (bc *BuilderContext) get(data IData) (IData, bool) {
+	val, ok := bc.DataSet.AvailableData[Name(data)]
+	return val, ok
+}
+
 type DataExecutionResponse struct {
 	Responses map[string]IData
 }
