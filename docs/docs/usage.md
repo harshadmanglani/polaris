@@ -1,137 +1,97 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 ---
 # Usage
 
-## Creating Workflows
-
-### Defining a Workflow
-A Workflow is a sequence of Builders that will perform some work. Let's take the example of a cab ride workflow. Essentially, for a cab ride workflow, builders (units of work) could be:
-    - User initiating a request
-    - Cabbie match
-    - Cabbie reaches source
-    - Ride starts
-    - Cabbie reaches destination
-    - User makes payment
-    - Ride ends
-
-
-Workflows must implement the `IWorkflow` interface.
-```go
-type IWorkflow interface {
-	GetWorkflowMeta() WorkflowMeta
-}
+From the root of your Go module, run:
 ```
-```go
-type CabRideWorkflow struct {
-}
-
-func (cr CabRideWorkflow) GetWorkflowMeta() WorkflowMeta {
-	return WorkflowMeta{
-		Builders: []IBuilder{
-                    UserInitiation{},
-                    CabbieMatching{},
-                    CabbieArrivalAtSource{},
-                    CabDepartureFromSource{},
-                    CabArrivalAtDest{},
-                    UserPayment{},
-                    RideEnds{}
-		},
-		TargetData: WorkflowTerminated{},
-	}
-}
+go get github.com/harshadmanglani/polaris
 ```
-You don't have to sequentially define the builders in order of execution. Polaris will figure it out. However, **you should if you can. It helps readability.**
+## Adding Polaris to your Go app
 
-### Defining a Builder
+Assuming you've already read up on <a href="/polaris/concepts/polaris">concepts</a>, let's get started
 
-A Builder is a unit of work in the workflow. Builders must implement the `IBuilder` interface.
+We'll break integration in two parts:
+- Things to do when your Go app is starting up
+- Things to do at runtime
+
+### Service Startup
+
+This is where you want to 
+1. Implement the <a href="/polaris/concepts/datastore">`IDataStore`</a> interface and initialize Polaris with it
+2. Register your <a href="/polaris/concepts/workflow">workflow(s)</a> with Polaris
+3. Initialize your executor
 
 ```go
-type IBuilder interface {
-	GetBuilderInfo() BuilderInfo
-	Process(BuilderContext) IData
-}
-```
+var dataStore polaris.IDataStore
+var executor polaris.Executor
 
-Following the same example, for the first unit of work in a cab ride workflow:
-```go
-var database Database
-var cabbieHttpClient CabbieHttpClient 
+void init(){
+  dataStore := SomeDataStoreImpl{}
+  polaris.InitRegistry(dataStore)
 
-type UserInitiation struct {
-}
+  polaris.RegisterWorkflow("alphaWorkflowKey", AlphaWorkflow{})
 
-func (uI UserInitiation) GetBuilderInfo() BuilderInfo {
-    return BuilderInfo{
-        Consumes: []IData{
-            UserInitiationRequest{},
-        },
-        Produces:  UserInitiationResponse{},
-        Optionals: nil,
-        Accesses:  nil,
+  executor := polaris.Executor{
+    Before: func(builder reflect.Type, delta []IData) {
+      fmt.Printf("Builder %s is about to be run with new data %v\n", builder, delta)
     }
-}
-
-func (uI UserInitiation) Process(context BuilderContext) IData {
-    userInitReq := context.get(UserInitiationRequest{})
-    database.save(userInitReq)
-
-    cabbieResponse := cabbieHttpClient.request(RideRequest{
-        userId: userInitReq.userId,
-        source: userInitReq.source,
-        dest: userInitReq.dest
-    })
-
-    return UserInitiationResponse{
-        success: true,
-        etaForCabbie: cabbieResponse.eta
+    After: func(builder reflect.Type, produced IData) {
+      fmt.Printf("Builder %s produced %s\n", builder, produced)
     }
+  }
 }
 ```
+### Runtime
 
-### Defining a Data
+This is where you process requests on your server by handing them over to polaris.
 
-A Data is a struct that holds the data that will be consumed and/or produced by steps in your workflow.
-These objects must implement the `IData` interface, which basically means that they should be a `struct`.
-
-For a user initiating a cab ride request, this is what the initial `Data` might look like.
+At runtime, you must
+1. Accept the request
+2. Generate a unique identifier for this request (`uniqueWorkflowId`)
+3. Pass your request data (ensuring that it would be part of the <a href="/polaris/concepts/builder#:~:text=of%20the%20builder.-,Consumes,-%2D%20A%20set%20of">`Consumes`</a> for the <a href="/polaris/concepts/builder">`Builder`</a> you want to run)
 
 ```go
-type UserInitiationRequest struct{
-    userId string
-    source string
-    dest string
+void main(){
+    http.HandleFunc("/request", RequestHandler)
+
+    fmt.Println("Server running at port 8080...")
+    http.ListenAndServe(":8080", nil)
 }
-```
 
-## Storing Workflows
-
-Workflows need to be stored to a database. Whether you're using a key-value store or RDBMS, you need to implement the `IDataStore` interface and pass it to the `polaris.InitRegistry` method.
-
-```go
-type IDataStore interface {
-	Write(key string, value interface{})
-	Read(key string) (interface{}, bool)
-}
-```
-
-## Running Workflows
-
-```go
-polaris.InitRegistry(dataStore)
-polaris.RegisterWorkflow(workflowKey, workflow)
-
-executor := polaris.Executor{
-	Before: func(builder reflect.Type, delta []IData) {
-        fmt.Printf("Builder %s is about to be run with new data %v\n", builder, delta)
+func RequestHandler(w http.ResponseWriter, r *http.Request) {
+    var alpha AlphaConsumes
+    err := json.NewDecoder(r.Body).Decode(&alpha)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
     }
-	After: func(builder reflect.Type, produced IData) {
-        fmt.Printf("Builder %s produced %s\n", builder, produced)
+
+    uniqueWorkflowId := alpha.Id
+    result := executor.Sequential("alphaWorkflowKey", uniqueWorkflowId, alpha)
+
+    // fetch expected data from the result
+    alphaProcessed, ok := result.get(AlphaProcessed{})
+    if !ok {
+        w.WriteHeader(http.StatusInternalServerError)
     }
+
+    // do something with alphaProcessed
+    w.WriteHeader(http.StatusOK)
 }
-
-response, err := executor.Sequential(workflowKey, workflowId, dataDelta)
-
-response, err := executor.Parallel(workflowKey, workflowId, dataDelta)
 ```
+
+## Limitations
+### Workflow versioning
+1. Unless you can afford a 100% downtime ensuring all active workflows move into a terminal state, deploying new code requires ensuring backward compatibility.
+2. What this means is - you'll need to a deploy a version of code that is backward compatible for older non terminal workflows while newer ones will execute on the new code.
+3. Once the older workflows have completed, a deployment to clean up stale code will be required.
+
+## How does the framework perform at scale?
+The framework itself has extremely low overhead. Since execution graphs are generated pre-runtime, all the orchestrator will do at runtime is use the graph and available data to run whichever builders can be run. 
+
+## Use cases
+1. You have multi-step workflow executions where each step is dependent on data generated from previous steps.
+2. Executions can span one request scope or multiple scopes.
+3. Your systems works with reusable components that can be combined in different ways to generate different end-results.
+4. Your workflows can pause, resume or even restart from the beginning.

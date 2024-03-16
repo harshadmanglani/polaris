@@ -46,6 +46,11 @@ type DataExecutionResponse struct {
 	Responses map[string]IData
 }
 
+func (de *DataExecutionResponse) get(data IData) (IData, bool) {
+	val, ok := de.Responses[Name(data)]
+	return val, ok
+}
+
 var structToNameMapping = make(map[reflect.Type]string)
 
 func Name(strucc interface{}) string {

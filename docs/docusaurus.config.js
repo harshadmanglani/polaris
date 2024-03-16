@@ -24,14 +24,10 @@ const config = {
   presets: [
     [
       'classic',
-      /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          routeBasePath: '/',
           sidebarPath: './sidebars.js',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          // editUrl:
-          //   'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
         },
         blog: false,
         theme: {
@@ -42,9 +38,7 @@ const config = {
   ],
 
   themeConfig:
-    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      image: 'img/docusaurus-social-card.jpg',
       navbar: {
         title: 'Polaris',
         logo: {
@@ -54,16 +48,39 @@ const config = {
         },
         items: [
           {
-            type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
+            type: 'doc',
+            docId: 'get-started',
             position: 'left',
             label: 'Docs',
           },
           {
-            href: 'https://github.com/harshadmanglani/polaris',
-            label: 'GitHub',
-            position: 'right',
+            type: 'doc',
+            docId: 'api',
+            position: 'left',
+            label: `API`,
+            class: 'hidden' // TODO: remove this when API reference is done
           },
+          {
+            type: 'doc',
+            docId: 'upcoming',
+            position: 'left',
+            label: `Upcoming`
+          },
+          {
+            position: 'right',
+            href: 'https://go.dev',
+            html: `<img src="img/go-logo.png" alt="Go" height="45" width="48" style="vertical-align: middle;"></img>`
+          },
+          {
+            href: 'https://github.com/harshadmanglani/polaris',
+            position: 'right',
+            className: 'header-github-link',
+          },
+          {
+            href: 'https://x.com/polaris_golang/',
+            position: 'right',
+            className: 'header-twitter-link'
+          }
         ],
       },
       footer: {
@@ -74,7 +91,7 @@ const config = {
             items: [
               {
                 label: 'Introduction',
-                to: '/docs/intro',
+                to: '/',
               },
             ],
           },
@@ -86,7 +103,7 @@ const config = {
                 href: 'https://twitter.com/PolarisGithub',
               },
             ],
-          },
+          }
         ],
         copyright: `Copyright © ${new Date().getFullYear()} Polaris, Inc. Built with Docusaurus.`,
       },
