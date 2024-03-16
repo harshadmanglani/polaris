@@ -55,10 +55,9 @@ const config = {
           },
           {
             type: 'doc',
-            docId: 'api',
+            docId: 'usage',
             position: 'left',
-            label: `API`,
-            class: 'hidden' // TODO: remove this when API reference is done
+            label: `Usage`,
           },
           {
             type: 'doc',
