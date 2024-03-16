@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[439],{6928:s=>{s.exports=JSON.parse('{"label":"go","permalink":"/polaris/tags/go","allTagsPath":"/polaris/tags","count":1,"items":[{"id":"get-started","title":"Get Started","description":"Install Go","permalink":"/polaris/get-started"}],"unlisted":false}')}}]);

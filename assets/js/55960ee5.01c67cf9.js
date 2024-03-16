@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[151],{350:s=>{s.exports=JSON.parse('[{"label":"go","permalink":"/polaris/tags/go","count":1}]')}}]);
