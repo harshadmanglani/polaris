@@ -71,7 +71,7 @@ func RequestHandler(w http.ResponseWriter, r *http.Request) {
     result := executor.Sequential("alphaWorkflowKey", uniqueWorkflowId, alpha)
 
     // fetch expected data from the result
-    alphaProcessed, ok := result.get(AlphaProcessed{})
+    alphaProcessed, ok := result.Get(AlphaProcessed{})
     if !ok {
         w.WriteHeader(http.StatusInternalServerError)
     }

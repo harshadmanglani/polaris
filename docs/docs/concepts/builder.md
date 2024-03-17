@@ -40,7 +40,7 @@ func (uI UserInitiation) GetBuilderInfo() BuilderInfo {
 }
 
 func (uI UserInitiation) Process(context BuilderContext) IData {
-  userInitReq := context.get(UserInitiationRequest{})
+  userInitReq := context.Get(UserInitiationRequest{})
   // save the request in a database (different from Polaris storing workflows in `IDataStore`)
   database.save(userInitReq)
 
