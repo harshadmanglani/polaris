@@ -37,13 +37,7 @@ const config = {
           trackingID: 'G-E1B8MVW2TR',
           anonymizeIP: true,
         },
-      }),
-      {
-        gtag: {
-          trackingID: 'G-E1B8MVW2TR',
-          anonymizeIP: true,
-        },
-      },
+      })
     ],
   ],
 
