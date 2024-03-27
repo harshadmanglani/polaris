@@ -1,4 +1,4 @@
-import {themes as prismThemes} from 'prism-react-renderer';
+import { themes as prismThemes } from 'prism-react-renderer';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -10,7 +10,7 @@ const config = {
   baseUrl: '/polaris',
 
   organizationName: 'harshadmanglani',
-  projectName: 'polaris', 
+  projectName: 'polaris',
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
@@ -41,87 +41,87 @@ const config = {
     ],
   ],
 
-  themeConfig:
-    ({
-      navbar: {
-        title: 'Polaris',
-        logo: {
-          alt: 'Polaris Logo',
-          src: 'img/light.svg',
-          srcDark: 'img/dark.svg'
+  themeConfig: {
+    image: 'img/logo.png',
+    navbar: {
+      title: 'Polaris',
+      logo: {
+        alt: 'Polaris Logo',
+        src: 'img/light.svg',
+        srcDark: 'img/dark.svg'
+      },
+      items: [
+        {
+          type: 'doc',
+          docId: 'get-started',
+          position: 'left',
+          label: 'Docs',
         },
-        items: [
-          {
-            type: 'doc',
-            docId: 'get-started',
-            position: 'left',
-            label: 'Docs',
-          },
-          {
-            type: 'doc',
-            docId: 'usage',
-            position: 'left',
-            label: `Usage`,
-          },
-          {
-            type: 'doc',
-            docId: 'upcoming',
-            position: 'left',
-            label: `Upcoming`
-          },
-          {
-            position: 'right',
-            href: 'https://go.dev',
-            html: `<img src="img/go-logo.png" alt="Go" height="45" width="48" style="vertical-align: middle;"></img>`
-          },
-          {
-            href: 'https://github.com/harshadmanglani/polaris',
-            position: 'right',
-            className: 'header-github-link',
-          },
-          {
-            href: 'https://x.com/polaris_golang/',
-            position: 'right',
-            className: 'header-twitter-link'
-          }
-        ],
-      },
-      footer: {
-        style: 'dark',
-        links: [
-          {
-            title: 'Docs',
-            items: [
-              {
-                label: 'Introduction',
-                to: '/',
-              },
-            ],
-          },
-          {
-            title: 'Community',
-            items: [
-              {
-                label: 'Twitter',
-                href: 'https://twitter.com/PolarisGithub',
-              },
-            ],
-          }
-        ],
-        copyright: `Copyright © ${new Date().getFullYear()} Polaris, Inc. Built with Docusaurus.`,
-      },
-      prism: {
-        theme: prismThemes.github,
-        darkTheme: prismThemes.dracula,
-      },
-      algolia: {
-        appId: 'D94ISND3YS',
-        apiKey: '42e3d00f1c1db0e4c63f37ec9ae22cfb',
-        indexName: 'polaris',
-        insights: true,
-        contextualSearch: false,
-      }
-    }),
+        {
+          type: 'doc',
+          docId: 'usage',
+          position: 'left',
+          label: `Usage`,
+        },
+        {
+          type: 'doc',
+          docId: 'upcoming',
+          position: 'left',
+          label: `Upcoming`
+        },
+        {
+          position: 'right',
+          href: 'https://go.dev',
+          html: `<img src="img/go-logo.png" alt="Go" height="45" width="48" style="vertical-align: middle;"></img>`
+        },
+        {
+          href: 'https://github.com/harshadmanglani/polaris',
+          position: 'right',
+          className: 'header-github-link',
+        },
+        {
+          href: 'https://x.com/polaris_golang/',
+          position: 'right',
+          className: 'header-twitter-link'
+        }
+      ],
+    },
+    footer: {
+      style: 'dark',
+      links: [
+        {
+          title: 'Docs',
+          items: [
+            {
+              label: 'Introduction',
+              to: '/',
+            },
+          ],
+        },
+        {
+          title: 'Community',
+          items: [
+            {
+              label: 'Twitter',
+              href: 'https://twitter.com/polaris_golang',
+            },
+          ],
+        }
+      ],
+      copyright: `Copyright © ${new Date().getFullYear()} Polaris, Inc. Built with Docusaurus.`,
+    },
+    prism: {
+      theme: prismThemes.github,
+      darkTheme: prismThemes.dracula,
+    },
+    algolia: {
+      appId: 'D94ISND3YS',
+      apiKey: '42e3d00f1c1db0e4c63f37ec9ae22cfb',
+      indexName: 'polaris',
+      insights: true,
+      contextualSearch: false,
+    }
+  },
 };
 
 export default config;

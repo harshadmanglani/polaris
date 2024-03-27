@@ -8,6 +8,6 @@
   </p>
   
   <p>
-    <a href="https://harshadmanglani.github.io/polaris/docs/getting-started/">Installation</a> | <a href="https://harshadmanglani.github.io/polaris/docs/usage/">Documentation</a> | <a href="https://twitter.com/polaris_golang">Twitter</a> | <a href="https://github.com/flipkart-incubator/databuilderframework">Inspiration</a>
+    <a href="https://harshadmanglani.github.io/polaris/docs/getting-started/">Installation</a> | <a href="https://harshadmanglani.github.io/polaris/docs/usage/">Documentation</a> | <a href="https://x.com/polaris_golang">Twitter</a> | <a href="https://github.com/flipkart-incubator/databuilderframework">Inspiration</a>
   </p>
 </div>
