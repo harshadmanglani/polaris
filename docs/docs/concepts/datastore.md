@@ -39,5 +39,5 @@ mockStorage := &mockStorage{
   store: make(map[string]interface{}),
 }
 
-polaris.InitRegistry(dataStore)
+polaris.InitRegistry(mockStorage)
 ```
