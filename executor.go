@@ -23,6 +23,11 @@ func checkForConsumes(dataSet *DataSet, builderInfo BuilderInfo) bool {
 }
 
 func (e *Executor) Sequential(workflowKey string, workflowId string, data ...IData) (DataExecutionResponse, error) {
+	defer func() {
+		if err := recover(); err != nil {
+			sugar.Errorf("Workflow execution panicked: %v", err)
+		}
+	}()
 
 	if dataStore == nil {
 		sugar.Errorf("Datastore uninitialized. Could not run workflow with key: ", workflowKey)
@@ -115,7 +120,12 @@ func (e *Executor) Sequential(workflowKey string, workflowId string, data ...IDa
  * This is experimental and severely untested. Use with caution.
  */
 func (e *Executor) Parallel(workflowKey string, workflowId string, data ...IData) (DataExecutionResponse, error) {
-
+	defer func() {
+		if err := recover(); err != nil {
+			sugar.Errorf("Workflow execution panicked: %v", err)
+		}
+	}()
+	
 	var dataSet DataSet
 	var dataFlow DataFlow
 	if dataFlowInterface, ok := dataStore.Read(workflowKey); !ok {

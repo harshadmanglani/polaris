@@ -29,7 +29,7 @@ func TestRegisterWorkflow(t *testing.T) {
 				{
 					{
 						Name:      Name(alphaBuilder{}),
-						Consumes:  mapset.NewSet[string](Name(alphaConsumes{})),
+						Consumes:  mapset.NewSet(Name(alphaConsumes{})),
 						Produces:  Name(alphaProduces{}),
 						Optionals: mapset.NewSet[string](),
 						Accesses:  mapset.NewSet[string](),
@@ -38,7 +38,7 @@ func TestRegisterWorkflow(t *testing.T) {
 				{
 					{
 						Name:      Name(betaBuilder{}),
-						Consumes:  mapset.NewSet[string](Name(alphaProduces{})),
+						Consumes:  mapset.NewSet(Name(alphaProduces{})),
 						Produces:  Name(betaProduces{}),
 						Optionals: mapset.NewSet[string](),
 						Accesses:  mapset.NewSet[string](),
@@ -47,7 +47,7 @@ func TestRegisterWorkflow(t *testing.T) {
 				{
 					{
 						Name:      Name(terminator{}),
-						Consumes:  mapset.NewSet[string](Name(alphaProduces{}), Name(betaProduces{})),
+						Consumes:  mapset.NewSet(Name(alphaProduces{}), Name(betaProduces{})),
 						Produces:  Name(workflowTerminated{}),
 						Optionals: mapset.NewSet[string](),
 						Accesses:  mapset.NewSet[string](),
