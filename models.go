@@ -43,7 +43,7 @@ func (bc *BuilderContext) Get(data IData) (IData, bool) {
 }
 
 type DataExecutionResponse struct {
-	Responses map[string]IData
+	Responses map[string]*IData
 }
 
 func (de *DataExecutionResponse) Get(data IData) (IData, bool) {
@@ -83,7 +83,7 @@ type IBuilder interface {
 }
 
 type BuilderContext struct {
-	DataSet DataSet
+	DataSet *DataSet
 }
 
 type BuilderInfo struct {

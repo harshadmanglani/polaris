@@ -1,6 +1,8 @@
 package polaris
 
 type IDataStore interface {
-	Write(key string, value interface{})
-	Read(key string) (interface{}, bool)
+	WriteDataFlow(key string, dataFlow *DataFlow)
+	ReadDataFlow(key string) (*DataFlow, bool)
+	WriteDataSet(key string, dataSet *DataSet)
+	ReadDataSet(key string) (*DataSet, bool)
 }

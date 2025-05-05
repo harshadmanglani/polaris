@@ -9,8 +9,8 @@ import (
 )
 
 type Executor struct {
-	Before func(builder reflect.Type, delta []IData) // TODO: add trigger delta
-	After  func(builder reflect.Type, produced IData)
+	Before func(builder reflect.Type, delta []*IData) // TODO: add trigger delta
+	After  func(builder reflect.Type, produced *IData)
 }
 
 func checkForConsumes(dataSet *DataSet, builderInfo BuilderInfo) bool {
@@ -22,7 +22,7 @@ func checkForConsumes(dataSet *DataSet, builderInfo BuilderInfo) bool {
 	return true
 }
 
-func (e *Executor) Sequential(workflowKey string, workflowId string, data ...IData) (DataExecutionResponse, error) {
+func (e *Executor) Sequential(workflowKey string, workflowId string, data ...*IData) (DataExecutionResponse, error) {
 	defer func() {
 		if err := recover(); err != nil {
 			sugar.Errorf("Workflow execution panicked: %v", err)
@@ -34,23 +34,17 @@ func (e *Executor) Sequential(workflowKey string, workflowId string, data ...IDa
 		return DataExecutionResponse{}, fmt.Errorf("DATASTORE_UNINITIALIZED")
 	}
 
-	var dataSet DataSet
-	var dataFlow DataFlow
-	if dataFlowInterface, ok := dataStore.Read(workflowKey); !ok {
-		return DataExecutionResponse{}, fmt.Errorf("WORKFLOW_KEY_NOT_FOUND")
-	} else {
-		dataFlow = dataFlowInterface.(DataFlow)
+	dataFlow, ok := dataStore.ReadDataFlow(workflowKey)
+	if !ok {
+		return DataExecutionResponse{}, fmt.Errorf("WORKFLOW_NOT_FOUND: %s", workflowKey)
 	}
 
-	if dataSetInterface, ok := dataStore.Read(workflowId); !ok {
-		dataSet = DataSet{
-			AvailableData: make(map[string]IData),
-		}
-	} else {
-		dataSet = dataSetInterface.(DataSet)
+	dataSet, ok := dataStore.ReadDataSet(workflowId)
+	if !ok {
+		return DataExecutionResponse{}, fmt.Errorf("DATASET_NOT_FOUND: %s", workflowId)
 	}
 
-	responseData := make(map[string]IData)
+	responseData := make(map[string]*IData)
 
 	activeDataSet := mapset.NewSet[string]()
 	for _, d := range data {
@@ -58,7 +52,7 @@ func (e *Executor) Sequential(workflowKey string, workflowId string, data ...IDa
 		activeDataSet.Add(Name(d))
 	}
 
-	processedBuilders := mapset.NewSet[BuilderMeta]()
+	processedBuilders := mapset.NewSet[*BuilderMeta]()
 	newlyGeneratedData := mapset.NewSet[string]()
 
 	for {
@@ -73,7 +67,7 @@ func (e *Executor) Sequential(workflowKey string, workflowId string, data ...IDa
 				}
 				builder := reflect.New(builderMeta.Type).Interface().(IBuilder)
 
-				if !checkForConsumes(&dataSet, builder.GetBuilderInfo()) {
+				if !checkForConsumes(dataSet, builder.GetBuilderInfo()) {
 					continue
 				}
 				if e.Before != nil {
@@ -91,12 +85,12 @@ func (e *Executor) Sequential(workflowKey string, workflowId string, data ...IDa
 					dataSet.AvailableData[Name(response)] = response
 					activeDataSet.Add(Name(response))
 					newlyGeneratedData.Add(Name(response))
-					responseData[Name(response)] = response
+					responseData[Name(response)] = &response
 				}
 				processedBuilders.Add(builderMeta)
 
 				if e.After != nil {
-					e.After(builderMeta.Type, response)
+					e.After(builderMeta.Type, &response)
 				}
 			}
 		}
@@ -119,30 +113,24 @@ func (e *Executor) Sequential(workflowKey string, workflowId string, data ...IDa
 /*
  * This is experimental and severely untested. Use with caution.
  */
-func (e *Executor) Parallel(workflowKey string, workflowId string, data ...IData) (DataExecutionResponse, error) {
+func (e *Executor) Parallel(workflowKey string, workflowId string, data ...*IData) (DataExecutionResponse, error) {
 	defer func() {
 		if err := recover(); err != nil {
 			sugar.Errorf("Workflow execution panicked: %v", err)
 		}
 	}()
-	
-	var dataSet DataSet
-	var dataFlow DataFlow
-	if dataFlowInterface, ok := dataStore.Read(workflowKey); !ok {
-		return DataExecutionResponse{}, fmt.Errorf("WORKFLOW_KEY_NOT_FOUND")
-	} else {
-		dataFlow = dataFlowInterface.(DataFlow)
+
+	dataFlow, ok := dataStore.ReadDataFlow(workflowKey)
+	if !ok {
+		return DataExecutionResponse{}, fmt.Errorf("WORKFLOW_NOT_FOUND: %s", workflowKey)
 	}
 
-	if dataSetInterface, ok := dataStore.Read(workflowId); !ok {
-		dataSet = DataSet{
-			AvailableData: make(map[string]IData),
-		}
-	} else {
-		dataSet = dataSetInterface.(DataSet)
+	dataSet, ok := dataStore.ReadDataSet(workflowId)
+	if !ok {
+		return DataExecutionResponse{}, fmt.Errorf("DATASET_NOT_FOUND: %s", workflowId)
 	}
 
-	responseData := make(map[string]IData)
+	responseData := make(map[string]*IData)
 
 	activeDataSet := mapset.NewSet[string]()
 	for _, d := range data {
@@ -150,7 +138,7 @@ func (e *Executor) Parallel(workflowKey string, workflowId string, data ...IData
 		activeDataSet.Add(Name(d))
 	}
 
-	processedBuilders := mapset.NewSet[BuilderMeta]()
+	processedBuilders := mapset.NewSet[*BuilderMeta]()
 	newlyGeneratedData := mapset.NewSet[string]()
 
 	for {
@@ -178,13 +166,13 @@ func (e *Executor) Parallel(workflowKey string, workflowId string, data ...IData
 	}, nil
 }
 
-func (e *Executor) executeBuilder(processedBuilders mapset.Set[BuilderMeta],
-	builderMeta BuilderMeta,
+func (e *Executor) executeBuilder(processedBuilders mapset.Set[*BuilderMeta],
+	builderMeta *BuilderMeta,
 	activeDataSet mapset.Set[string],
-	dataSet DataSet,
-	data []IData,
+	dataSet *DataSet,
+	data []*IData,
 	newlyGeneratedData mapset.Set[string],
-	responseData map[string]IData,
+	responseData map[string]*IData,
 	wg *sync.WaitGroup) {
 
 	if processedBuilders.Contains(builderMeta) {
@@ -198,7 +186,7 @@ func (e *Executor) executeBuilder(processedBuilders mapset.Set[BuilderMeta],
 	}
 	builder := reflect.New(builderMeta.Type).Interface().(IBuilder)
 
-	if !checkForConsumes(&dataSet, builder.GetBuilderInfo()) {
+	if !checkForConsumes(dataSet, builder.GetBuilderInfo()) {
 		wg.Done()
 		return
 	}
@@ -219,11 +207,11 @@ func (e *Executor) executeBuilder(processedBuilders mapset.Set[BuilderMeta],
 		dataSet.AvailableData[Name(response)] = response
 		activeDataSet.Add(Name(response))
 		newlyGeneratedData.Add(Name(response))
-		responseData[Name(response)] = response
+		responseData[Name(response)] = &response
 	}
 	processedBuilders.Add(builderMeta)
 	if e.After != nil {
-		e.After(builderMeta.Type, response)
+		e.After(builderMeta.Type, &response)
 	}
 	wg.Done()
 }
