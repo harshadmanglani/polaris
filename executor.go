@@ -82,7 +82,7 @@ func (e *Executor) Sequential(workflowKey string, workflowId string, data ...*ID
 						sugar.Errorf("Builder %s did not produce %s, instead it produced %s", builderMeta.Name, builderMeta.Produces, Name(response))
 						return DataExecutionResponse{}, fmt.Errorf("INVALID_PRODUCED_DATA")
 					}
-					dataSet.AvailableData[Name(response)] = response
+					dataSet.AvailableData[Name(response)] = &response
 					activeDataSet.Add(Name(response))
 					newlyGeneratedData.Add(Name(response))
 					responseData[Name(response)] = &response
@@ -204,7 +204,7 @@ func (e *Executor) executeBuilder(processedBuilders mapset.Set[*BuilderMeta],
 			return
 			// TODO: return error here
 		}
-		dataSet.AvailableData[Name(response)] = response
+		dataSet.AvailableData[Name(response)] = &response
 		activeDataSet.Add(Name(response))
 		newlyGeneratedData.Add(Name(response))
 		responseData[Name(response)] = &response

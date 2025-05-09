@@ -34,7 +34,7 @@ type IData interface {
 }
 
 type DataSet struct {
-	AvailableData map[string]IData
+	AvailableData map[string]*IData
 }
 
 func (bc *BuilderContext) Get(data IData) (IData, bool) {
