@@ -16,7 +16,7 @@ func TestRegisterWorkflow(t *testing.T) {
 		args               args
 		wantErr            bool
 		skipHierarchyCheck bool
-		wantHierarchy      [][]BuilderMeta
+		wantHierarchy      [][]*BuilderMeta
 	}{
 		{
 			name: "Base_Successful_Test",
@@ -25,11 +25,11 @@ func TestRegisterWorkflow(t *testing.T) {
 				workflow:    testWorkflow{},
 			},
 			wantErr: false,
-			wantHierarchy: [][]BuilderMeta{
+			wantHierarchy: [][]*BuilderMeta{
 				{
 					{
 						Name:      Name(alphaBuilder{}),
-						Consumes:  mapset.NewSet[string](Name(alphaConsumes{})),
+						Consumes:  mapset.NewSet(Name(alphaConsumes{})),
 						Produces:  Name(alphaProduces{}),
 						Optionals: mapset.NewSet[string](),
 						Accesses:  mapset.NewSet[string](),
@@ -38,7 +38,7 @@ func TestRegisterWorkflow(t *testing.T) {
 				{
 					{
 						Name:      Name(betaBuilder{}),
-						Consumes:  mapset.NewSet[string](Name(alphaProduces{})),
+						Consumes:  mapset.NewSet(Name(alphaProduces{})),
 						Produces:  Name(betaProduces{}),
 						Optionals: mapset.NewSet[string](),
 						Accesses:  mapset.NewSet[string](),
@@ -47,7 +47,7 @@ func TestRegisterWorkflow(t *testing.T) {
 				{
 					{
 						Name:      Name(terminator{}),
-						Consumes:  mapset.NewSet[string](Name(alphaProduces{}), Name(betaProduces{})),
+						Consumes:  mapset.NewSet(Name(alphaProduces{}), Name(betaProduces{})),
 						Produces:  Name(workflowTerminated{}),
 						Optionals: mapset.NewSet[string](),
 						Accesses:  mapset.NewSet[string](),
@@ -75,7 +75,8 @@ func TestRegisterWorkflow(t *testing.T) {
 		},
 	}
 	mockStorage := &mockStorage{
-		store: make(map[string]interface{}),
+		dataFlowStore: make(map[string]*DataFlow),
+		dataSetStore: make(map[string]*DataSet),
 	}
 	InitRegistry(mockStorage)
 	for _, tt := range tests {
@@ -88,8 +89,7 @@ func TestRegisterWorkflow(t *testing.T) {
 				return
 			}
 
-			dataFlowInterface, _ := mockStorage.Read(tt.args.workflowKey)
-			dataFlow := dataFlowInterface.(DataFlow)
+			dataFlow, _ := mockStorage.ReadDataFlow(tt.args.workflowKey)
 			gotHierarchy := dataFlow.DependencyHierarchy
 			wantHierarchy := tt.wantHierarchy
 
@@ -98,7 +98,7 @@ func TestRegisterWorkflow(t *testing.T) {
 	}
 }
 
-func compareHierarchies(wantHierarchy [][]BuilderMeta, gotHierarchy [][]BuilderMeta, t *testing.T) {
+func compareHierarchies(wantHierarchy [][]*BuilderMeta, gotHierarchy [][]*BuilderMeta, t *testing.T) {
 	for level := range gotHierarchy {
 		for index, builder := range gotHierarchy[level] {
 			if wantHierarchy[level][index].Name != builder.Name {

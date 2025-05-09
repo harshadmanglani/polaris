@@ -33,8 +33,8 @@ func RegisterWorkflow(workflowKey string, workflow IWorkflow) error {
 		return err
 	}
 
-	dataFlow := newDataFlow(workflow, &metaDataManager)
-	dataStore.Write(workflowKey, dataFlow)
+	dataFlow := newDataFlow(workflow, metaDataManager)
+	dataStore.WriteDataFlow(workflowKey, dataFlow)
 
 	sugar.Infof("Registering %s took ", reflect.TypeOf(workflow), time.Now())
 	return nil
@@ -63,30 +63,30 @@ func newBuilderMeta(builder IBuilder) BuilderMeta {
 type DataFlow struct {
 	Name                string
 	TargetData          string
-	DependencyHierarchy [][]BuilderMeta
-	metaDataManager     MetaDataManager
+	DependencyHierarchy [][]*BuilderMeta
+	metaDataManager     *MetaDataManager
 }
 
-func newDataFlow(workflow IWorkflow, metaDataManager *MetaDataManager) DataFlow {
-	return DataFlow{
+func newDataFlow(workflow IWorkflow, metaDataManager *MetaDataManager) *DataFlow {
+	return &DataFlow{
 		Name:                Name(workflow),
 		TargetData:          Name(workflow.GetWorkflowMeta().TargetData),
-		metaDataManager:     *metaDataManager,
+		metaDataManager:     metaDataManager,
 		DependencyHierarchy: generateDependencyHierarchy(metaDataManager),
 	}
 }
 
-func generateDependencyHierarchy(metaDataManager *MetaDataManager) [][]BuilderMeta {
+func generateDependencyHierarchy(metaDataManager *MetaDataManager) [][]*BuilderMeta {
 
-	dependencyGraph := make(map[string][]BuilderMeta)
+	dependencyGraph := make(map[string][]*BuilderMeta)
 	inDegree := make(map[string]int, 0)
-	depedencyHierarchy := make([][]BuilderMeta, 0)
+	depedencyHierarchy := make([][]*BuilderMeta, 0)
 
 	for name, builderMeta := range metaDataManager.builderMetaMap {
 		consumes := builderMeta.EffectiveConsumes()
 		for _, c := range consumes.ToSlice() {
 			if _, ok := dependencyGraph[name]; !ok {
-				dependencyGraph[name] = make([]BuilderMeta, 0)
+				dependencyGraph[name] = make([]*BuilderMeta, 0)
 			}
 			if producedBy, ok := metaDataManager.producedToProducerMap[c]; ok {
 				if val, ok := metaDataManager.builderMetaMap[producedBy.Name]; ok {
@@ -114,7 +114,7 @@ func generateDependencyHierarchy(metaDataManager *MetaDataManager) [][]BuilderMe
 
 	for queue.Len() > 0 {
 		levelSize := queue.Len()
-		currentLevel := []BuilderMeta{}
+		currentLevel := []*BuilderMeta{}
 
 		for i := 0; i < levelSize; i++ {
 			element := queue.Front()

@@ -109,14 +109,24 @@ func (eTDW emptyTargetDataWorkflow) GetWorkflowMeta() WorkflowMeta {
 }
 
 type mockStorage struct {
-	store map[string]interface{}
+	dataFlowStore map[string]*DataFlow
+	dataSetStore map[string]*DataSet
 }
 
-func (ms *mockStorage) Read(key string) (interface{}, bool) {
-	val, ok := ms.store[key]
+func (ms *mockStorage) ReadDataFlow(key string) (*DataFlow, bool) {
+	val, ok := ms.dataFlowStore[key]
 	return val, ok
 }
 
-func (ms *mockStorage) Write(key string, val interface{}) {
-	ms.store[key] = val
+func (ms *mockStorage) WriteDataFlow(key string, val *DataFlow) {
+	ms.dataFlowStore[key] = val
+}
+
+func (ms *mockStorage) ReadDataSet(key string) (*DataSet, bool) {
+	val, ok := ms.dataSetStore[key]
+	return val, ok
+}
+
+func (ms *mockStorage) WriteDataSet(key string, val *DataSet) {
+	ms.dataSetStore[key] = val
 }
