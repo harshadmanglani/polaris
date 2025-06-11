@@ -33,7 +33,7 @@ Often, a lot of the logic would overlap - such as invoicing, settlements, etc. P
 ```go
 type CardPaymentWorkflow struct{}
 
-func (w CardPaymentWorkflow) GetWorkflowMeta() WorkflowMeta {
+func (w CPW) GetWorkflowMeta() WorkflowMeta {
     return WorkflowMeta{
         Builders: []IBuilder{
             InitiateReq{},
@@ -55,7 +55,7 @@ func (w CardPaymentWorkflow) GetWorkflowMeta() WorkflowMeta {
 ```go
 type NetbankingPaymentWorkflow struct{}
 
-func (w NetbankingPaymentWorkflow) GetWorkflowMeta() WorkflowMeta {
+func (w NPW) GetWorkflowMeta() WorkflowMeta {
     return WorkflowMeta{
         Builders: []IBuilder{
             InitiateReq{},
