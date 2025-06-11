@@ -64,4 +64,28 @@ func (w NetbankingPaymentWorkflow) GetWorkflowMeta() WorkflowMeta {
 }
 ```
 
+Each builder (workflow's unit of work) would maintain and process some logic, which can be reused across multiple workflows.
+
+For example,
+```go
+type TokenizeCard struct {
+    TokenService TokenService
+    DB           TokenStore
+}
+
+func (b TokenizeCard) GetBuilderInfo() BuilderInfo {
+    return BuilderInfo{
+        Consumes: []IData{ EncryptedCardData{} },
+        Produces: CardTokenData{},
+    }
+}
+
+func (b TokenizeCard) Process(ctx BuilderContext) IData {
+    enc := ctx.Get(EncryptedCardData{})
+    token := b.TokenService.Generate(enc)
+    b.DB.Save(token)
+    return CardTokenData{ Token: token }
+}
+```
+
 For more details, dive into the <a href="https://harshadmanglani.github.io/polaris/usage/">docs</a>!
