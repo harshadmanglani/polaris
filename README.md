@@ -26,6 +26,10 @@ Polaris is especially useful for payments, e-commerce and fulfilment use cases. 
 
 Often, a lot of the logic would overlap - such as invoicing, settlements, etc. Polaris can neatly structure your code, making it more maintainable than ever.
 
+<table>
+<tr>
+<td>
+
 ```go
 type CardPaymentWorkflow struct{}
 
@@ -45,6 +49,9 @@ func (w CardPaymentWorkflow) GetWorkflowMeta() WorkflowMeta {
 }
 ```
 
+</td>
+<td>
+
 ```go
 type NetbankingPaymentWorkflow struct{}
 
@@ -63,6 +70,10 @@ func (w NetbankingPaymentWorkflow) GetWorkflowMeta() WorkflowMeta {
     }
 }
 ```
+
+</td>
+</tr>
+</table>
 
 Each builder (workflow's unit of work) would maintain and process some logic, which can be reused across multiple workflows.
 
