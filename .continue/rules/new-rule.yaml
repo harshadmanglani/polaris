@@ -1,0 +1,7 @@
+name: New rule
+version: 0.0.1
+schema: v1
+rules:
+  - Never delete existing functions or interfaces. Only update/modify existing code when explicitly asked. Otherwise add new code.
+  - For new code you write, always add a comment at the top of the function with ** @generated_by claude.ai
+  - After writing new code, don't describe what the code is doing. Just give me software.
